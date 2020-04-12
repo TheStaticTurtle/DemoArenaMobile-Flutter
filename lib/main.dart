@@ -1,13 +1,15 @@
+import 'package:demoarenamobile_flutter_port/DemoArenaUtils.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'sshManager.dart';
+import 'SSHManager.dart';
 
 void main() => runApp(MyApp());
 
-var sshMan = new SSHManager();
+var ssh = new SSHManager();
+var demoarena = new DemoArenaUtils(ssh);
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -34,18 +36,80 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String _image = "assets/images/info_iut_still.gif";
+  String _statusText = "Please login";
 
-  Future<void> connectSSH(BuildContext ctx) async {
-    setState(() {
-      _image = "assets/images/info_iut.gif";
-    });
-    await sshMan.connect("testuser","testuserpassword");
-    setState(() {
-      _image = "assets/images/info_iut_still.gif";
-    });
-    String result = await sshMan.execute("ls /");
+  renderApplicationError(dynamic err, dynamic stack) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text("The application has enccouterd an error"),
+          content: new Text(err.toString()),
+          actions: <Widget>[
+            // usually buttons at the bottom of the dialog
+            new FlatButton(
+              child: new Text("Report"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+
+            new FlatButton(
+              child: new Text("Stacktrace"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                  // return object of type Dialog
+                    return AlertDialog(
+                      title: new Text("StackTrace:"),
+                      content: SingleChildScrollView(
+                        child: new Text(stack.toString()),
+                      ),
+                      actions: <Widget>[
+                        // usually buttons at the bottom of the dialog
+                        new FlatButton(
+                          child: new Text("Close"),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        )
+                      ]
+                    );
+                  },
+                );
+              },
+            ),
+            new FlatButton(
+              child: new Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> connect(BuildContext ctx) async {
+    setState(() { _image = "assets/images/info_iut.gif"; });
+
+    demoarena.updateCredentials("testuser","testusepassword");
+    BasicResponce cb = await demoarena.connectToGateInfo();
+    if(cb.success) {
+      setState(() { _statusText = cb.message; });
+    } else {
+      setState(() { _image = "assets/images/info_iut_still.gif"; });
+      renderApplicationError(cb.err_obj,cb.err_stacktrace);
+      return;
+    }
+
+    String result = await ssh.execute("ls /");
     debugPrint(result);
-    await sshMan.disconnect();
+    await ssh.disconnect();
 
     Fluttertoast.showToast(
         msg: result,
@@ -69,16 +133,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body:SingleChildScrollView(
@@ -92,9 +148,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     padding: EdgeInsets.only(top: 15.0,bottom: 30.0,left: 80.0,right: 80.0),
                   ),
-
                   Text(
-                    'Please login!',
+                    '$_statusText',
                   ),
                   Padding(
                     padding: EdgeInsets.only(top: 15.0,bottom: 0,left: 20.0,right: 20.0),
@@ -125,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: RaisedButton(
                           textColor: Colors.white,
                           color: Colors.redAccent,
-                          onPressed: () => connectSSH(context),
+                          onPressed: () => connect(context),
                           child: Text("Login"),
                         ),
                       ),

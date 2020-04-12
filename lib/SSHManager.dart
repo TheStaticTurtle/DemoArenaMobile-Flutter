@@ -4,13 +4,16 @@ import 'package:ssh/ssh.dart';
 class SSHManager {
   SSHClient client;
 
-  void connect(String username, String password) async {
+  void init(String username, String password) {
     this.client = new SSHClient(
       host: "belfort.tugler.fr",
       port: 22,
       username: username,
       passwordOrKey: password,
     );
+  }
+
+  Future<void> connect() async {
     await this.client.connect();
   }
 
