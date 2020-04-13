@@ -1,53 +1,10 @@
-import 'dart:ffi';
 import 'dart:convert';
-
 import 'package:demoarenamobile_flutter_port/SSHManager.dart';
-import 'package:flutter/cupertino.dart';
-
+import 'package:flutter/cupertino.dart' as cupertino;
 import 'Utils.dart';
-
-class BasicResponce {
-  String message = "The opperation didn't suceded";
-  bool success = false;
-  dynamic err_obj;
-  dynamic err_stacktrace;
-  BasicResponce(String message, bool success, dynamic err_obj, dynamic err_stacktrace) {
-    this.message = message;
-    this.success = success;
-    this.err_obj = err_obj;
-    this.err_stacktrace = err_stacktrace;
-  }
-}
-
-class AuthetificationResponse {
-  String message = "The opperation didn't suceded";
-  bool success = false;
-  String b64capcha ="";
-  dynamic err_obj;
-  dynamic err_stacktrace;
-  AuthetificationResponse(String message, bool success, String b64capcha,  dynamic err_obj,dynamic err_stacktrace) {
-    this.message = message;
-    this.success = success;
-    this.b64capcha = b64capcha;
-    this.err_obj = err_obj;
-    this.err_stacktrace = err_stacktrace;
-  }
-}
-
-class SemesterResponse {
-  String message = "The opperation didn't suceded";
-  bool success = false;
-  String html ="";
-  dynamic err_obj;
-  dynamic err_stacktrace;
-  SemesterResponse(String message, bool success, String html,  dynamic err_obj,dynamic err_stacktrace) {
-    this.message = message;
-    this.success = success;
-    this.html = html;
-    this.err_obj = err_obj;
-    this.err_stacktrace = err_stacktrace;
-  }
-}
+import 'DemoArenaClasses.dart';
+import 'package:html/parser.dart' show parse;
+import 'package:html/dom.dart';
 
 class DemoArenaUtils {
   static const String _DEMOARENA_CasAuth_COMMAND = "python -c 'import requests,re,base64,pickle;CAS = \"https://cas.univ-fcomte.fr/cas/login\";session = requests.Session();resp = session.get(CAS, verify=False, allow_redirects=True);lt = re.findall(r\"(LT-.+.-cas\\.univ-fcomte\\.fr)\",resp.text);assert len(lt)==1;print(\"OK\");session.post(CAS, data={\"username\":base64.b64decode(\"##INSERT-USER-HERE##\"), \"password\":base64.b64decode(\"##INSERT-PASS-HERE##\"), \"lt\":lt[0], \"_eventId\":\"submit\",\"execution\":\"e1s1\" } , verify=False, allow_redirects=False);resp = session.get(\"https://demoarena.iut-bm.univ-fcomte.fr/entree.php\", verify=False, allow_redirects=True);resp = session.get(\"https://demoarena.iut-bm.univ-fcomte.fr/securimage/securimage_show.php\", verify=False, allow_redirects=True);print({\"cookies\":session.cookies.get_dict(),\"image\":base64.b64encode(resp.content)});f = open(\".demoarena-cookies\", \"wb\");pickle.dump(session.cookies, f);f.close()' 2> .demoarena-logs";
@@ -58,11 +15,13 @@ class DemoArenaUtils {
   String _user_username;
   String _user_password;
 
+  String last_html;
+
   DemoArenaUtils(SSHManager man) {
     this._sshManager = man;
     this._user_username = "unknown";
     this._user_password = "unknown";
-    this._sshManager.init("unknown","unknown");
+    this._sshManager.init("unknown", "unknown");
   }
 
   void updateCredentials(String username, String password) {
@@ -70,71 +29,290 @@ class DemoArenaUtils {
     this._user_password = password;
   }
 
-  Future<BasicResponce> connectToGateInfo() async {
-    this._sshManager.init(this._user_username,this._user_password);
+  Future<Response> connectToGateInfo() async {
+    this._sshManager.init(this._user_username, this._user_password);
     try {
       await this._sshManager.connect();
-    } catch(e, stacktrace) {
-      return new BasicResponce("Failed to connec to gate-info",false, e,stacktrace);
+    } catch (e, stacktrace) {
+      return new Response("Failed to connec to gate-info", null,
+          ReturnState.GateInfoUnknownError, new Error(e, stacktrace));
     }
-    return new BasicResponce("Connected to gate-info !",true, null, null);
+    return new Response(
+        "Connected to gate-info", null, ReturnState.Success, null);
   }
 
-  Future<AuthetificationResponse> authenticateCASDemoarena() async {
+  Future<Response> authenticateCASDemoarena() async {
     try {
       String command = DemoArenaUtils._DEMOARENA_CasAuth_COMMAND;
-      command = command.replaceAll("##INSERT-USER-HERE##", base64Encode(utf8.encode(this._user_username)));
-      command = command.replaceAll("##INSERT-PASS-HERE##", base64Encode(utf8.encode(this._user_password)));
-      command = command.replaceAll("\n","").replaceAll("\r","");
+      command = command.replaceAll("##INSERT-USER-HERE##",
+          base64Encode(utf8.encode(this._user_username)));
+      command = command.replaceAll("##INSERT-PASS-HERE##",
+          base64Encode(utf8.encode(this._user_password)));
+      command = command.replaceAll("\n", "").replaceAll("\r", "");
       String authResult = await this._sshManager.execute(command);
-      if(authResult.contains("OK")) {
+      if (authResult.contains("OK")) {
         List<String> rawData = authResult.split("\n");
-        if(rawData.length == 3) {
-          Map<String, dynamic> data = jsonDecode(rawData[1].replaceAll("\'", "\""));
-          if(data.containsKey("cookies")) {
-            return AuthetificationResponse("Demoarena loaded!",true,data["image"],null,rawData);
+        if (rawData.length == 3) {
+          Map<String, dynamic> data = jsonDecode(
+              rawData[1].replaceAll("\'", "\""));
+          if (data.containsKey("cookies")) {
+            return new Response(
+                "Demoarena loaded!", data["image"], ReturnState.Success, null);
           } else {
-            dynamic e = new ResultParseError("Erreur, cookie AGIMUS non present: Mot de passe ou utilisateur incorrect");
-            return AuthetificationResponse("User or password incorrect (Could also be a server failure)",false,"",e,e.cause);
+            return new Response("User or password incorrect", null,
+                ReturnState.DemoarenaNoAMIGUS, new Error("See stacktrace",
+                    "Erreur, cookie AGIMUS non present: Mot de passe ou utilisateur incorrect"));
           }
         } else {
-          dynamic e = new ResultParseError("Erreur, la commande a retourner plus que 3 lignes (Erreur de l'application voir .demoarena.log)");
-          return AuthetificationResponse("Failed at demoarena loading",false,"",e,e.cause);
+          return new Response("Failed at demoarena loading", null,
+              ReturnState.DemoarenaScriptError, new Error("See stacktrace",
+                  "Erreur, la commande a retourner plus que 3 lignes (Erreur de l'application voir .demoarena.log)"));
         }
       } else {
-        dynamic e = new ResultParseError("Erreur, impossible de lire le tag LT. (Deux problemes possible: Seveur CAS down ou erreur de l'application voir .demoarena-log)");
-        return AuthetificationResponse("Failed at demoarena loading",false,"",e,e.cause);
+        return new Response(
+            "Failed at demoarena loading", null, ReturnState.DemoarenaNoLT,
+            new Error("See stacktrace",
+                "Erreur, impossible de lire le tag LT. (Deux problemes possible: Seveur CAS down ou erreur de l'application voir .demoarena-log)"));
       }
-    } catch(e, stacktrace) {
-      return AuthetificationResponse("Failed at demoarena loading",false,"",e,stacktrace);
+    } catch (e, stacktrace) {
+      return new Response("Failed at demoarena loading", null,
+          ReturnState.DemoarenaUnknownError, new Error(e, stacktrace));
     }
   }
 
-  Future<SemesterResponse> validateCaptchaAndGetCurrentSemester(String captcha, String ine) async {
+  Future<Response> validateCaptchaAndGetCurrentSemester(String captcha,
+      String ine) async {
     try {
       String command = DemoArenaUtils._DEMOARENA_DemoarenaSelect_COMMAND;
-      command = command.replaceAll("##INSERT-CAPTCHA-HERE##", base64Encode(utf8.encode(captcha)));
-      command = command.replaceAll("##INSERT-INE-HERE##", base64Encode(utf8.encode(ine)));
-      command = command.replaceAll("\n","").replaceAll("\r","");
+      command = command.replaceAll(
+          "##INSERT-CAPTCHA-HERE##", base64Encode(utf8.encode(captcha)));
+      command = command.replaceAll(
+          "##INSERT-INE-HERE##", base64Encode(utf8.encode(ine)));
+      command = command.replaceAll("\n", "").replaceAll("\r", "");
       String result = await this._sshManager.execute(command);
-      result = utf8.decode(base64Decode(result.replaceAll("\n","").replaceAll("\r","")));
+      result = utf8.decode(
+          base64Decode(result.replaceAll("\n", "").replaceAll("\r", "")));
 
-      if(result.contains("La valeur du captcha")) {
-        return new SemesterResponse("Captcha invalide",false,"ERROR","Captcha invalide","Captcha invalide");
+      if (result.contains("La valeur du captcha")) {
+        return new Response(
+            "Captcha invalide", null, ReturnState.SemesterCaptchaInvalid,
+            new Error("Captcha invalide", "Captcha invalide"));
       }
-      if(result.contains("Utilisateur non authenti")) {
+      if (result.contains("Utilisateur non authenti")) {
         var text = "Une licorne sauvage a casser l'application, essaye de la relancer";
-        return new SemesterResponse(text,false,"ERROR",text,text);
+        return new Response(
+            "Numero etudiant incorrect", null, ReturnState.SemesterUnknownError,
+            new Error(text, text));
       }
-      if(result.contains("Num") && result.contains("tudiant(e) inconnu")) {
-        return new SemesterResponse("Numero etudiant incorrect",false,"ERROR","Numero etudiant incorrect","Numero etudiant incorrect");
+      if (result.contains("Num") && result.contains("tudiant(e) inconnu")) {
+        return new Response(
+            "Numero etudiant incorrect", null, ReturnState.SemesterINEInvalid,
+            new Error(
+                "Numero etudiant incorrect", "Numero etudiant incorrect"));
       }
-
-      return new SemesterResponse("Connection reussie",true,result,null,null);
-
-    } catch(e, stacktrace) {
-      return new SemesterResponse("Failed a catcha",false,"ERROR",e,stacktrace);
+      this.last_html = result;
+      return new Response(
+          "Connection reussie", result, ReturnState.Success, null);
+    } catch (e, stacktrace) {
+      return new Response(
+          "Failed at captcha", null, ReturnState.SemesterUnknownError,
+          new Error(e, stacktrace));
     }
   }
 
+  User parseUserFormHTML() {
+    var document = parse(this.last_html);
+
+    User user = new User();
+
+    Element nameFormationSelector = document.querySelector(
+        "body > div.bulletin > table > tbody > tr");
+    user.name =
+        nameFormationSelector.children[1].children[0].children[0].children[0]
+            .text;
+    user.formation =
+        nameFormationSelector.children[1].children[0].children[0].children[1]
+            .text;
+
+    Element semesterSelector = document.querySelector(
+        "body > form > fieldset > p > select");
+
+    for (Element el in semesterSelector.children) {
+      Semester sem = new Semester(el.attributes["value"] ,el.text);
+      //sem.id = el.attributes["value"];
+      //sem.name = el.text;
+      user.semesters.add(sem);
+    }
+
+    Element absanceTable = document.querySelector("#absences");
+    if (absanceTable != null) {
+      int i = 0;
+      for (Element el in absanceTable.getElementsByTagName("tr")) {
+        if (i > 0) {
+          Absence a = new Absence();
+          a.from = el.getElementsByTagName("td")[0].text;
+          a.to = el.getElementsByTagName("td")[1].text;
+          a.justified = el.getElementsByTagName("td")[2].text == "Oui";
+          a.cause = el.getElementsByTagName("td")[3].text;
+          user.semesters[0].absences.add(a);
+        }
+        i++;
+      }
+    }
+
+    user.semesters[0].done = document.outerHtml.contains(
+        "Les informations contenues dans ce tableau sont définitives");
+
+    Element gradesTable = document.querySelector(".notes_bulletin");
+    if (gradesTable != null) {
+      bool foundFirstUE = false;
+      UE currentUE = new UE();
+      Course currentCourse = new Course();
+
+      int i = 0;
+      for (Element el in gradesTable.getElementsByTagName("tr")) {
+        if (i > 0 && !user.semesters[0].done ||
+            i > 1 && user.semesters[0].done) {
+          if (user.semesters[0].done) {
+            if (el.attributes["class"].contains("notes_bulletin_row_ue")) {
+              currentUE = new UE();
+
+              RegExp exp = new RegExp(r"</span>(.*)<br>(.*)</td>");
+              Iterable<RegExpMatch> matches = exp.allMatches(el.outerHtml);
+              if (matches.length > 0) {
+                var match = matches.elementAt(0);
+                currentUE.id = match.group(1);
+                currentUE.name = match.group(2);
+              } else {
+                currentUE.name = el.text;
+              }
+              currentUE.grade = double.parse(el.children[2].text);
+              currentUE.coeff = double.parse(el.children[2].text);
+
+              RegExp exp2 = new RegExp(r"(\\d+.\\d+)/(\\d+.\\d+)");
+              Iterable<RegExpMatch> matches2 = exp2.allMatches(el.outerHtml);
+              if (matches.length > 0) {
+                var match = matches2.elementAt(0);
+                currentUE.min_grade = double.parse(match.group(1));
+                currentUE.max_grade = double.parse(match.group(2));
+              }
+
+              user.semesters[0].ues.add(currentUE);
+            } else {
+              currentCourse = new Course();
+              currentCourse.id = el.children[1].text;
+              currentCourse.name = el.children[2].text;
+              currentCourse.grade = double.parse(el.children[4].text);
+              currentCourse.coeff = double.parse(el.children[6].text);
+
+              RegExp exp = new RegExp(r"(\\d+.\\d+)/(\\d+.\\d+)");
+              Iterable<RegExpMatch> matches = exp.allMatches(el.outerHtml);
+              if (matches.length > 0) {
+                var match = matches.elementAt(0);
+                currentCourse.min_grade = double.parse(match.group(1));
+                currentCourse.max_grade = double.parse(match.group(2));
+              }
+
+              currentUE.courses.add(currentCourse);
+            }
+          } else {
+            if (el.attributes["class"].contains("notes_bulletin_row_ue")) {
+              currentUE = new UE();
+
+              RegExp exp = new RegExp(r"</span>(.*)<br>(.*)</td>");
+              Iterable<RegExpMatch> matches = exp.allMatches(el.outerHtml);
+              if (matches.length > 0) {
+                var match = matches.elementAt(0);
+                currentUE.id = match.group(1);
+                currentUE.name = match.group(2);
+              } else {
+                currentUE.name = el.text;
+              }
+
+              String gradeText = el.children[2].text;
+              String coeffText = el.children[2].text;
+              if (gradeText.isEmpty) {
+                currentUE.grade = -1;
+              } else {
+                currentUE.grade = double.parse(gradeText);
+              }
+              if (coeffText.isEmpty) {
+                currentUE.coeff = -1;
+              } else {
+                currentUE.coeff = double.parse(coeffText);
+              }
+
+              currentUE.min_grade = -1;
+              currentUE.max_grade = -1;
+
+              user.semesters[0].ues.add(currentUE);
+            } else if (el.attributes["class"].contains("toggle4")) {
+              Grade grade = new Grade();
+
+              grade.name = el.children[3].text;
+
+              String coeffText = el.children[6].text.replaceAll("(", "")
+                  .replaceAll(")", "");
+              if (coeffText.isEmpty) {
+                grade.coeff = -1;
+              } else {
+                grade.coeff = double.parse(coeffText);
+              }
+
+              String gradeText = el.children[6].text;
+              List<String> gradesTexts = gradeText.split("/");
+
+              try {
+                grade.grade = double.parse(gradesTexts[0]);
+              } catch (e) {
+                grade.grade = -1;
+              }
+              try {
+                grade.outof = double.parse(gradesTexts[1]);
+              } catch (e) {
+                grade.outof = -1;
+              }
+
+              grade.max_grade = -1;
+              grade.min_grade = -1;
+
+              grade.id = "None_" + grade.name;
+              grade.showId = false;
+              grade.type = "GRADE";
+
+              currentCourse.grades.add(grade);
+            } else {
+              currentCourse = new Course();
+              currentCourse.id = el.children[1].text;
+              currentCourse.name = el.children[2].text;
+              try {
+                currentCourse.grade = double.parse(el.children[4].text);
+              }
+              catch (e) {
+                currentCourse.grade = -1;
+              }
+              currentCourse.coeff = double.parse(el.children[6].text);
+
+              RegExp exp = new RegExp(r"(\\d+.\\d+)/(\\d+.\\d+)");
+              Iterable<RegExpMatch> matches = exp.allMatches(el.outerHtml);
+              if (matches.length > 0) {
+                var match = matches.elementAt(0);
+                try {
+                  currentCourse.min_grade = double.parse(match.group(1));
+                  currentCourse.max_grade = double.parse(match.group(2));
+                } catch (e) {
+                  currentCourse.min_grade = -1;
+                  currentCourse.max_grade = -1;
+                }
+              }
+              currentUE.courses.add(currentCourse);
+            }
+          }
+        }
+        i++;
+      }
+    }
+
+    return user;
+  }
 }
