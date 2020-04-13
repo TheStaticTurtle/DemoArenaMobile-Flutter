@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:demoarenamobile_flutter_port/DemoArenaUtils.dart';
 import 'package:demoarenamobile_flutter_port/Utils.dart';
 import 'package:flutter/foundation.dart';
@@ -38,6 +41,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String _image = "assets/images/info_iut_still.gif";
   String _statusText = "Please login";
+  String _buttonText = "Login";
+  bool _showCaptcha = false;
+  String _base64;
 
   renderApplicationError(dynamic err, dynamic stack) {
     showDialog(
@@ -99,19 +105,48 @@ class _MyHomePageState extends State<MyHomePage> {
     SharedPreferences pref = await SharedPreferences.getInstance();
     setState(() { _image = "assets/images/info_iut.gif"; });
 
-    demoarena.updateCredentials("testuser","testusepassword");
-    BasicResponce cb = await demoarena.connectToGateInfo();
-    if(cb.success) {
-      setState(() { _statusText = cb.message; });
+    demoarena.updateCredentials(pref.getString("username"),pref.getString("password"));
+    BasicResponce gateinfoConnectionCallback = await demoarena.connectToGateInfo();
+    if(gateinfoConnectionCallback.success) {
+      setState(() {
+        _showCaptcha = false;
+        _statusText = gateinfoConnectionCallback.message;
+        _buttonText = "Login";
+      });
     } else {
-      setState(() { _image = "assets/images/info_iut_still.gif"; });
-      renderApplicationError(cb.err_obj,cb.err_stacktrace);
+      setState(() {
+        _image = "assets/images/info_iut_still.gif";
+        _statusText = gateinfoConnectionCallback.message;
+      });
+      renderApplicationError(gateinfoConnectionCallback.err_obj,gateinfoConnectionCallback.err_stacktrace);
       return;
     }
 
-    String result = await ssh.execute("ls /");
+    AuthetificationResponse demoarenaLoadingCallback = await demoarena.authenticateCASDemoarena();
+    if(demoarenaLoadingCallback.success) {
+      setState(() {
+        _showCaptcha = true;
+        _buttonText = "Validate";
+        _base64 = demoarenaLoadingCallback.b64capcha;
+        _statusText = demoarenaLoadingCallback.message;
+      });
+    } else {
+      setState(() {
+        _image = "assets/images/info_iut_still.gif";
+        _statusText = demoarenaLoadingCallback.message;
+      });
+      renderApplicationError(demoarenaLoadingCallback.err_obj,demoarenaLoadingCallback.err_stacktrace);
+      return;
+    }
+
+    String result = await ssh.execute("ls .demo*");
     debugPrint(result);
     await ssh.disconnect();
+
+    setState(() {
+      _image = "assets/images/info_iut_still.gif";
+      _statusText = "Done";
+    });
 
     Fluttertoast.showToast(
         msg: result,
@@ -221,6 +256,35 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                           ),
                           Padding(
+                            padding: EdgeInsets.only(top: 0,bottom: 0,left: 20.0,right: 20.0),
+                            child: Builder(
+                                builder: (context) {
+                                  if (_showCaptcha == true) {
+                                    return Table(
+                                        columnWidths: {0: FractionColumnWidth(.4)},
+                                        children: [
+                                          TableRow(
+                                              children: [
+                                                Text( "Enter the captcha: " ),
+                                                TextFormField(
+                                                  controller: null,
+                                                  validator: (String value) {
+                                                    if(value.length != 6) return "Chapcha format invalid (len!=6)";
+                                                    return null;
+                                                  },
+                                                ),
+                                                Image.memory(base64Decode(_base64)),
+                                              ]
+                                          )
+                                        ]
+                                    );
+                                  } else {
+                                    return Container();
+                                  }
+                                }
+                            )
+                          ),
+                          Padding(
                             padding: EdgeInsets.only(top: 15,bottom: 0,left: 20.0,right: 20.0),
                             child: SizedBox(
                               width: double.infinity,
@@ -237,7 +301,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       connect(context)
                                     }
                                   },
-                                  child: Text("Login"),
+                                  child: Text('$_buttonText'),
                                 ),
                               ),
                             ),

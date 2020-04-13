@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:ssh/ssh.dart';
 
 
@@ -6,7 +7,7 @@ class SSHManager {
 
   void init(String username, String password) {
     this.client = new SSHClient(
-      host: "belfort.tugler.fr",
+      host: "gate-info.iut-bm.univ-fcomte.fr",
       port: 22,
       username: username,
       passwordOrKey: password,
@@ -17,8 +18,8 @@ class SSHManager {
     await this.client.connect();
   }
 
-  Future<String> execute(String comand) async{
-    return await this.client.execute("ls /");
+  Future<String> execute(String command) async{
+    return await client.execute(command);
   }
 
   void disconnect() async{
