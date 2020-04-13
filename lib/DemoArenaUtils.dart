@@ -34,6 +34,21 @@ class AuthetificationResponse {
   }
 }
 
+class SemesterResponse {
+  String message = "The opperation didn't suceded";
+  bool success = false;
+  String html ="";
+  dynamic err_obj;
+  dynamic err_stacktrace;
+  SemesterResponse(String message, bool success, String html,  dynamic err_obj,dynamic err_stacktrace) {
+    this.message = message;
+    this.success = success;
+    this.html = html;
+    this.err_obj = err_obj;
+    this.err_stacktrace = err_stacktrace;
+  }
+}
+
 class DemoArenaUtils {
   static const String _DEMOARENA_CasAuth_COMMAND = "python -c 'import requests,re,base64,pickle;CAS = \"https://cas.univ-fcomte.fr/cas/login\";session = requests.Session();resp = session.get(CAS, verify=False, allow_redirects=True);lt = re.findall(r\"(LT-.+.-cas\\.univ-fcomte\\.fr)\",resp.text);assert len(lt)==1;print(\"OK\");session.post(CAS, data={\"username\":base64.b64decode(\"##INSERT-USER-HERE##\"), \"password\":base64.b64decode(\"##INSERT-PASS-HERE##\"), \"lt\":lt[0], \"_eventId\":\"submit\",\"execution\":\"e1s1\" } , verify=False, allow_redirects=False);resp = session.get(\"https://demoarena.iut-bm.univ-fcomte.fr/entree.php\", verify=False, allow_redirects=True);resp = session.get(\"https://demoarena.iut-bm.univ-fcomte.fr/securimage/securimage_show.php\", verify=False, allow_redirects=True);print({\"cookies\":session.cookies.get_dict(),\"image\":base64.b64encode(resp.content)});f = open(\".demoarena-cookies\", \"wb\");pickle.dump(session.cookies, f);f.close()' 2> .demoarena-logs";
   static const String _DEMOARENA_DemoarenaSelect_COMMAND = "python -c 'import requests,base64,pickle;f = open(\".demoarena-cookies\", \"rb\");session = requests.Session();session.cookies.update(pickle.load(f));f.close();print(base64.b64encode(session.post(\"https://demoarena.iut-bm.univ-fcomte.fr/traitement.php\", data={\"nip_VAL\":base64.b64decode(\"##INSERT-INE-HERE##\"), \"capt_Code\":base64.b64decode(\"##INSERT-CAPTCHA-HERE##\")}, verify=False, allow_redirects=True).text.encode(\"UTF-8\")))' 2>> .demoarena-logs";
@@ -55,7 +70,7 @@ class DemoArenaUtils {
     this._user_password = password;
   }
 
-  Future<BasicResponce> connectToGateInfo({Function(BasicResponce) callback}) async {
+  Future<BasicResponce> connectToGateInfo() async {
     this._sshManager.init(this._user_username,this._user_password);
     try {
       await this._sshManager.connect();
@@ -65,7 +80,7 @@ class DemoArenaUtils {
     return new BasicResponce("Connected to gate-info !",true, null, null);
   }
 
-  Future<AuthetificationResponse> authenticateCASDemoarena({Function(BasicResponce) callback}) async {
+  Future<AuthetificationResponse> authenticateCASDemoarena() async {
     try {
       String command = DemoArenaUtils._DEMOARENA_CasAuth_COMMAND;
       command = command.replaceAll("##INSERT-USER-HERE##", base64Encode(utf8.encode(this._user_username)));
@@ -94,4 +109,32 @@ class DemoArenaUtils {
       return AuthetificationResponse("Failed at demoarena loading",false,"",e,stacktrace);
     }
   }
+
+  Future<SemesterResponse> validateCaptchaAndGetCurrentSemester(String captcha, String ine) async {
+    try {
+      String command = DemoArenaUtils._DEMOARENA_DemoarenaSelect_COMMAND;
+      command = command.replaceAll("##INSERT-CAPTCHA-HERE##", base64Encode(utf8.encode(captcha)));
+      command = command.replaceAll("##INSERT-INE-HERE##", base64Encode(utf8.encode(ine)));
+      command = command.replaceAll("\n","").replaceAll("\r","");
+      String result = await this._sshManager.execute(command);
+      result = utf8.decode(base64Decode(result.replaceAll("\n","").replaceAll("\r","")));
+
+      if(result.contains("La valeur du captcha")) {
+        return new SemesterResponse("Captcha invalide",false,"ERROR","Captcha invalide","Captcha invalide");
+      }
+      if(result.contains("Utilisateur non authenti")) {
+        var text = "Une licorne sauvage a casser l'application, essaye de la relancer";
+        return new SemesterResponse(text,false,"ERROR",text,text);
+      }
+      if(result.contains("Num") && result.contains("tudiant(e) inconnu")) {
+        return new SemesterResponse("Numero etudiant incorrect",false,"ERROR","Numero etudiant incorrect","Numero etudiant incorrect");
+      }
+
+      return new SemesterResponse("Connection reussie",true,result,null,null);
+
+    } catch(e, stacktrace) {
+      return new SemesterResponse("Failed a catcha",false,"ERROR",e,stacktrace);
+    }
+  }
+
 }

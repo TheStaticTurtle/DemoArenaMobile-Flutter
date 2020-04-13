@@ -1,3 +1,5 @@
+
+import 'package:url_launcher/url_launcher.dart';
 bool isNumeric(String s) {
     if(s == null) {
       return false;
@@ -13,4 +15,12 @@ void printWrapped(String text) {
 class ResultParseError implements Exception {
   String cause;
   ResultParseError(this.cause);
+}
+
+void openUrl(String url) async {
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    throw 'Could not launch $url';
+  }
 }

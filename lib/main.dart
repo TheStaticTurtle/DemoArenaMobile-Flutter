@@ -7,8 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'SSHManager.dart';
+import 'Utils.dart';
 
 void main() => runApp(MyApp());
 
@@ -44,6 +44,12 @@ class _MyHomePageState extends State<MyHomePage> {
   String _buttonText = "Login";
   bool _showCaptcha = false;
   String _base64;
+
+  final inputUserameController = TextEditingController();
+  final inputPasswordController = TextEditingController();
+  final inputINEController = TextEditingController();
+  final inputCaptchaController = TextEditingController();
+
 
   renderApplicationError(dynamic err, dynamic stack) {
     showDialog(
@@ -101,7 +107,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Future<void> connect(BuildContext ctx) async {
+  Future<void> connectToGateInfo(BuildContext ctx) async {
     SharedPreferences pref = await SharedPreferences.getInstance();
     setState(() { _image = "assets/images/info_iut.gif"; });
 
@@ -122,6 +128,16 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
 
+    await connectToDemoarena(ctx);
+
+    setState(() {
+      _image = "assets/images/info_iut_still.gif";
+      _statusText = "Enter captcha";
+    });
+  }
+  Future<void> connectToDemoarena(BuildContext ctx) async {
+    setState(() { _image = "assets/images/info_iut.gif"; });
+
     AuthetificationResponse demoarenaLoadingCallback = await demoarena.authenticateCASDemoarena();
     if(demoarenaLoadingCallback.success) {
       setState(() {
@@ -139,9 +155,38 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
 
-    String result = await ssh.execute("ls .demo*");
-    debugPrint(result);
-    await ssh.disconnect();
+    setState(() {
+      _image = "assets/images/info_iut_still.gif";
+      _statusText = "Done";
+    });
+  }
+  Future<void> validateCaptcha(BuildContext ctx) async {
+    SharedPreferences pref = await SharedPreferences.getInstance();
+    setState(() { _image = "assets/images/info_iut.gif"; });
+
+    demoarena.updateCredentials(pref.getString("username"),pref.getString("password"));
+    SemesterResponse captchaValidationAndCurrentSemesterCallback = await demoarena.validateCaptchaAndGetCurrentSemester(inputCaptchaController.text,pref.getString("ine"));
+    if(captchaValidationAndCurrentSemesterCallback.success) {
+      setState(() {
+        _showCaptcha = false;
+        _statusText = captchaValidationAndCurrentSemesterCallback.message;
+        _buttonText = "Login";
+      });
+    } else {
+      if( captchaValidationAndCurrentSemesterCallback.err_obj.toString() == "Captcha invalide" ||
+          captchaValidationAndCurrentSemesterCallback.err_obj.toString() == "Numero etudiant incorrect") {
+        await connectToDemoarena(ctx);
+      } else {
+        renderApplicationError(captchaValidationAndCurrentSemesterCallback.err_obj,captchaValidationAndCurrentSemesterCallback.err_stacktrace);
+      }
+      setState(() {
+        _image = "assets/images/info_iut_still.gif";
+        _statusText = captchaValidationAndCurrentSemesterCallback.message;
+      });
+      return;
+    }
+
+    ssh.disconnect();
 
     setState(() {
       _image = "assets/images/info_iut_still.gif";
@@ -149,8 +194,8 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     Fluttertoast.showToast(
-        msg: result,
-        toastLength: Toast.LENGTH_SHORT,
+        msg: captchaValidationAndCurrentSemesterCallback.html,
+        toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.CENTER,
         timeInSecForIosWeb: 1,
         backgroundColor: Colors.red,
@@ -160,17 +205,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
 
-  void _openUrl(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
-  final inputUserameController = TextEditingController();
-  final inputPasswordController = TextEditingController();
-  final inputINEController = TextEditingController();
 
   @override
   void dispose() {
@@ -178,6 +212,7 @@ class _MyHomePageState extends State<MyHomePage> {
     inputUserameController.dispose();
     inputPasswordController.dispose();
     inputINEController.dispose();
+    inputCaptchaController.dispose();
     super.dispose();
   }
 
@@ -267,7 +302,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                               children: [
                                                 Text( "Enter the captcha: " ),
                                                 TextFormField(
-                                                  controller: null,
+                                                  controller: inputCaptchaController,
                                                   validator: (String value) {
                                                     if(value.length != 6) return "Chapcha format invalid (len!=6)";
                                                     return null;
@@ -298,7 +333,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                       snapshot.data.setString("username", inputUserameController.text),
                                       snapshot.data.setString("password", inputPasswordController.text),
                                       snapshot.data.setString("ine", inputINEController.text),
-                                      connect(context)
+                                      if(!_showCaptcha) {
+                                        connectToGateInfo(context)
+                                      } else {
+                                        validateCaptcha(context)
+                                      }
                                     }
                                   },
                                   child: Text('$_buttonText'),
@@ -340,7 +379,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: children
               ),
               floatingActionButton: FloatingActionButton(
-                onPressed: () => _openUrl("https://github.com/TurtleForGaming/DemoArenaMobile/issues/new/choose"),
+                onPressed: () => openUrl("https://github.com/TurtleForGaming/DemoArenaMobile/issues/new/choose"),
                 tooltip: 'Report a bug',
                 child: Icon(Icons.error),
               ), // This trailing comma makes auto-formatting nicer for build methods.
