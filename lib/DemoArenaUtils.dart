@@ -363,7 +363,7 @@ class DemoArenaUtils {
           moy.id = "BONUS";
           moy.name = ue.id;
           moy.coeff = -1;
-          //moy.grade = ((totalNotes / totalCoeff)*100.0).round() /100.0;
+          moy.grade = totalCoeff > 0 ? ((totalNotes / totalCoeff)*100.0).round() /100.0 :( totalNotes *100.0).round() /100.0;
           moy.max_grade = -1;
           moy.min_grade = -1;
           moy.outof = -1;
