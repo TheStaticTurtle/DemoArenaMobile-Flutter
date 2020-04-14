@@ -37,6 +37,12 @@ enum LoginScreenState {
   EnterCaptcha,
   ValidatingCaptcha,
 }
+enum DisplayScreenState {
+  Loading,
+  Empty,
+  Grades,
+  Misses
+}
 
 enum ReturnState {
   Success,

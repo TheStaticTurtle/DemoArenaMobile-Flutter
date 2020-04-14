@@ -120,6 +120,41 @@ class DemoArenaUtils {
     }
   }
 
+  Future<Response> getSemester(String semID) async {
+    try {
+      String command = DemoArenaUtils._DEMOARENA_DemoarenaCustomSelect_COMMAND;
+      command = command.replaceAll( "##INSERT-ID-HERE##", base64Encode(utf8.encode(semID)));
+      command = command.replaceAll("\n", "").replaceAll("\r", "");
+      String result = await this._sshManager.execute(command);
+      result = utf8.decode( base64Decode(result.replaceAll("\n", "").replaceAll("\r", "")));
+
+      if (result.contains("La valeur du captcha")) {
+        return new Response(
+            "Captcha invalide", null, ReturnState.SemesterCaptchaInvalid,
+            new Error("Captcha invalide", "Captcha invalide"));
+      }
+      if (result.contains("Utilisateur non authenti")) {
+        var text = "Une licorne sauvage a casser l'application, essaye de la relancer";
+        return new Response(
+            "Numero etudiant incorrect", null, ReturnState.SemesterUnknownError,
+            new Error(text, text));
+      }
+      if (result.contains("Num") && result.contains("tudiant(e) inconnu")) {
+        return new Response(
+            "Numero etudiant incorrect", null, ReturnState.SemesterINEInvalid,
+            new Error(
+                "Numero etudiant incorrect", "Numero etudiant incorrect"));
+      }
+      this.last_html = result;
+      return new Response(
+          "Connection reussie", result, ReturnState.Success, null);
+    } catch (e, stacktrace) {
+      return new Response(
+          "Failed at captcha", null, ReturnState.SemesterUnknownError,
+          new Error(e, stacktrace));
+    }
+  }
+
   User parseUserFormHTML() {
     var document = parse(this.last_html);
 
@@ -174,7 +209,7 @@ class DemoArenaUtils {
         if (i > 0 && !user.semesters[0].done ||
             i > 1 && user.semesters[0].done) {
           if (user.semesters[0].done) {
-            if (el.attributes["class"].contains("notes_bulletin_row_ue")) {
+            if (el.attributes["class"] != null && el.attributes["class"].contains("notes_bulletin_row_ue")) {
               currentUE = new UE();
 
               RegExp exp = new RegExp(r"</span>(.*)<br>(.*)</td>");
@@ -191,7 +226,7 @@ class DemoArenaUtils {
 
               RegExp exp2 = new RegExp(r"(\\d+.\\d+)/(\\d+.\\d+)");
               Iterable<RegExpMatch> matches2 = exp2.allMatches(el.outerHtml);
-              if (matches.length > 0) {
+              if (matches2.length > 0) {
                 var match = matches2.elementAt(0);
                 currentUE.min_grade = double.parse(match.group(1));
                 currentUE.max_grade = double.parse(match.group(2));
@@ -216,7 +251,7 @@ class DemoArenaUtils {
               currentUE.courses.add(currentCourse);
             }
           } else {
-            if (el.attributes["class"].contains("notes_bulletin_row_ue")) {
+            if (el.attributes["class"] != null && el.attributes["class"].contains("notes_bulletin_row_ue")) {
               currentUE = new UE();
 
               RegExp exp = new RegExp(r"</span>(.*)<br>(.*)</td>");
@@ -246,7 +281,7 @@ class DemoArenaUtils {
               currentUE.max_grade = -1;
 
               user.semesters[0].ues.add(currentUE);
-            } else if (el.attributes["class"].contains("toggle4")) {
+            } else if (el.attributes["class"] != null && el.attributes["class"].contains("toggle4")) {
               Grade grade = new Grade();
 
               grade.name = el.children[3].text;
@@ -310,7 +345,77 @@ class DemoArenaUtils {
           }
         }
         i++;
+      }if(foundFirstUE) {
+        user.semesters[0].ues.add(currentUE);
       }
+
+      for(UE ue in user.semesters[0].ues) {
+        if(ue.name.toLowerCase().contains("bonus")) {
+          double totalNotes = 0;
+          double totalCoeff = 0;
+          for(Course cr in ue.courses) {
+            if(cr.grade > 0) {
+              totalNotes += cr.grade * cr.coeff;
+              totalCoeff += cr.coeff;
+            }
+          }
+          Grade moy = new Grade();
+          moy.id = "BONUS";
+          moy.name = ue.id;
+          moy.coeff = -1;
+          //moy.grade = ((totalNotes / totalCoeff)*100.0).round() /100.0;
+          moy.max_grade = -1;
+          moy.min_grade = -1;
+          moy.outof = -1;
+          moy.type = "BONUS";
+          moy.showId = false;
+          user.semesters[0].uesMoy.add(moy);
+
+        } else {
+          double totalNotes = 0;
+          double totalCoeff = 0;
+          for(Course cr in ue.courses) {
+            if(cr.grade > 0) {
+              totalNotes += cr.grade * cr.coeff;
+              totalCoeff += cr.coeff;
+            }
+          }
+          Grade moy = new Grade();
+          moy.id = "MOY";
+          moy.name = ue.name;
+          moy.coeff = totalCoeff;
+          moy.grade = ((totalNotes / totalCoeff)*100.0).round() /100.0;
+          moy.max_grade = -1;
+          moy.min_grade = -1;
+          moy.type = "MOY";
+          moy.showId = false;
+          user.semesters[0].uesMoy.add(moy);
+        }
+      }
+
+      double totalNotes = 0.0;
+      double totalCoeff = 0.0;
+      double noteOffset = 0.0;
+      for(Grade gr in user.semesters[0].uesMoy) {
+        if(gr.type == "MOY") {
+          totalNotes += gr.grade * gr.coeff;
+          totalCoeff += gr.coeff;
+        }
+        if(gr.type == "BONUS") {
+          noteOffset += gr.grade;
+        }
+      }
+      Grade g = new Grade();
+      g.type = "MOYGEN";
+      g.id = "MOYGEN";
+      g.name = "Moyenne generale";
+      g.coeff = -1;
+      g.max_grade = -1;
+      g.min_grade = -1;
+      g.grade =  ((totalNotes / totalCoeff)*100.0).round() /100.0;
+      g.grade += noteOffset;
+      g.showId = false;
+      user.semesters[0].moyGen = g;
     }
 
     return user;

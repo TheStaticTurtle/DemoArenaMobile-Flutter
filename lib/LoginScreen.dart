@@ -220,7 +220,6 @@ class _LoginPage extends State<LoginPage> {
     SharedPreferences pref = await SharedPreferences.getInstance();
     updateStatus(LoginScreenState.ValidatingCaptcha);
 
-    demoarena.updateCredentials(pref.getString("username"),pref.getString("password"));
     Response captchaValidationAndCurrentSemesterCallback = await demoarena.validateCaptchaAndGetCurrentSemester(intputController_captcha.text,pref.getString("ine"));
     if(captchaValidationAndCurrentSemesterCallback.return_state == ReturnState.Success) {
     } else {
@@ -377,7 +376,10 @@ class _LoginPage extends State<LoginPage> {
                                         children: [
                                           TableRow(
                                               children: [
-                                                Text( "Enter the captcha: " ),
+                                                TableCell(
+                                                  verticalAlignment: TableCellVerticalAlignment.middle,
+                                                  child: Text( "Enter the captcha: " ),
+                                                ),
                                                 TextFormField(
                                                   controller: intputController_captcha,
                                                   validator: (String value) {
@@ -497,7 +499,7 @@ class DisplayPage extends StatefulWidget {
   @override
   _DiplayPage createState() => _DiplayPage();
 }
-class _DiplayPage extends State<DisplayPage> {
+class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
   renderUnkownError(Error err) {
     showDialog(
       context: context,
@@ -705,15 +707,68 @@ class _DiplayPage extends State<DisplayPage> {
 
   Semester _semesterDropDownSelected = null;
   User currentUser = null;
-  List<String> _tabs = ['One', 'Two', 'Three'];
+
+  DisplayScreenState state = DisplayScreenState.Grades;
+
+  List<Tab> tabList = List();
   TabController _tabController;
+
+  @override
+  void initState() {
+    tabList.add(new Tab(text:'Grades',));
+    tabList.add(new Tab(text:'Absences',));
+    _tabController = new TabController(vsync: this, length: tabList.length);
+    _tabController.addListener(() => {
+      setState(() {
+        if(_tabController.index == 0) {
+          state = DisplayScreenState.Grades;
+        }else {
+          state = DisplayScreenState.Misses;
+        }
+      })
+    });
+    super.initState();
+  }
 
   Future<void> loadPage(BuildContext ctx) async {
     SharedPreferences pref = await SharedPreferences.getInstance();
     setState( () {
       currentUser = demoarena.parseUserFormHTML();
+      state = DisplayScreenState.Grades;
     });
   }
+  Future<void> changeSemester(BuildContext ctx, String semId) async {
+    Response semesterCallback = await demoarena.getSemester(semId);
+    SharedPreferences pref = await SharedPreferences.getInstance();
+    if(semesterCallback.return_state == ReturnState.Success) {
+      setState( () {
+        currentUser = demoarena.parseUserFormHTML();
+        state = DisplayScreenState.Grades;
+
+        tabList.clear();
+        tabList.add(new Tab(text:'Grades',));
+        if(!currentUser.semesters[0].done) {
+          tabList.add(new Tab(text:'Absences',));
+        }
+        _tabController = new TabController(vsync: this, length: tabList.length);
+        _tabController.addListener(() => {
+          setState(() {
+            if(_tabController.index == 0) {
+              state = DisplayScreenState.Grades;
+            }else {
+              state = DisplayScreenState.Misses;
+            }
+          })
+        });
+
+      });
+    } else {
+      renderError(semesterCallback.return_state, semesterCallback.err);
+    }
+
+
+  }
+
 
   @override
   void dispose() {
@@ -734,14 +789,15 @@ class _DiplayPage extends State<DisplayPage> {
 
           if (snapshot.hasData) {
             children = Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
+              //mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
                 Padding(
-                  padding: EdgeInsets.only(top: 5,bottom: 0,left: 5.0,right: 5.0),
+                  padding: EdgeInsets.only(top: 5,bottom: 0,left: 10.0,right: 5.0),
                   child:
                   Text(
-                    "M. Samuel TUGLER",
+                    currentUser.name,
                     style: TextStyle(
                         fontSize: 30,
                         color: Colors.black87
@@ -755,64 +811,214 @@ class _DiplayPage extends State<DisplayPage> {
                         ? Text(currentUser.semesters[0].name)
                         : Text(
                       _semesterDropDownSelected.name,
-                      style: TextStyle(color: Colors.blue),
+                      style: TextStyle(color: Colors.red),
                     ),
                     items: currentUser.semesters.map((value) {
                       return new DropdownMenuItem<Semester>(
                         value: value,
-                        child: new Text(value.name),
+                        child: new Text(
+                            value.name,
+                            style: TextStyle(color: Colors.redAccent),
+                      ),
                       );
                     }).toList(),
                     onChanged: (val) {
                       setState( () {
-                        _semesterDropDownSelected = val;
+                        if(state != DisplayScreenState.Loading) {
+                          state = DisplayScreenState.Loading;
+                          changeSemester(context,val.id);
+                          _semesterDropDownSelected = val;
+                        }
                       });
                     },
                     isExpanded: true,
                   )
                 ),
-
-                ListView.separated(
-                    scrollDirection: Axis.vertical,
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.all(8),
-                    itemCount: currentUser.semesters[0].absences.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      debugPrint(currentUser.semesters[0].absences.length.toString());
-                      return Container(
-                        height: 50,
-                        color: Colors.amber[600],
-                        child: Center(child: Text('Entry ${currentUser.semesters[0].absences[index].from}')),
-                      );
-                    },
-                    separatorBuilder: (BuildContext context, int index) => const Divider(),
-                ),
-                /*Table(
-                columnWidths: {0: FractionColumnWidth(.4)},
-                    children: [
-                      TableRow(
-                          children: [
-                            Text( "Enter the captcha: " ),
-                          ]
-                      )
-                    ]
-                ),*/
                 Padding(
-                  padding: EdgeInsets.only(top: 15,bottom: 0,left: 20.0,right: 20.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ButtonTheme(
-                      height: 45.0,
-                      child: RaisedButton(
-                        textColor: Colors.white,
-                        color: Colors.redAccent,
-                        onPressed: () => {
-                          loadPage(context),
-                        },
-                        child: Text("DEBUG"),
+                  padding: const EdgeInsets.all(0),
+                  child: new Column(
+                    children: <Widget>[
+                      new Container(
+                        decoration: new BoxDecoration(),
+                        child: new TabBar(
+                          controller: _tabController,
+                          labelColor: Colors.black,
+                          indicatorColor: Colors.pink,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          tabs: tabList,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
+                ),
+                Builder(
+                    builder: (context) {
+                      if(state == DisplayScreenState.Misses) {
+                        if (currentUser.semesters[0].absences.length > 0) {
+                          return ListView.separated(
+                            scrollDirection: Axis.vertical,
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.all(8),
+                            itemCount: currentUser.semesters[0].absences.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              return Container(
+                                child: Table(
+                                  columnWidths: {0: FractionColumnWidth(.18)},
+                                  children: [
+                                    TableRow(children: [
+                                      TableCell(
+                                        verticalAlignment: TableCellVerticalAlignment
+                                            .middle,
+                                        child: Text("De: ",
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold
+                                          ),
+                                        ),
+                                      ),
+                                      TableCell(
+                                        verticalAlignment: TableCellVerticalAlignment
+                                            .middle,
+                                        child: Text(
+                                          currentUser.semesters[0] .absences[index].from,
+                                          style: TextStyle(
+                                              color: currentUser.semesters[0]
+                                                  .absences[index].justified
+                                                  ? Colors.green
+                                                  : Colors.red,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold
+                                          ),
+                                        ),
+                                      ),
+                                    ]),
+                                    TableRow(children: [
+                                      TableCell(
+                                        verticalAlignment: TableCellVerticalAlignment
+                                            .middle,
+                                        child: Text("A: ",
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold
+                                          ),
+                                        ),
+                                      ),
+                                      TableCell(
+                                        verticalAlignment: TableCellVerticalAlignment
+                                            .middle,
+                                        child: Text(
+                                          currentUser.semesters[0]
+                                              .absences[index].to,
+                                          style: TextStyle(
+                                              color: currentUser.semesters[0]
+                                                  .absences[index].justified
+                                                  ? Colors.green
+                                                  : Colors.red,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold
+                                          ),
+                                        ),
+                                      ),
+                                    ]),
+                                    TableRow(children: [
+                                      TableCell(
+                                        verticalAlignment: TableCellVerticalAlignment
+                                            .middle,
+                                        child: Text("Raison: "),
+                                      ),
+                                      TableCell(
+                                        verticalAlignment: TableCellVerticalAlignment
+                                            .middle,
+                                        child: Text(
+                                          currentUser.semesters[0]
+                                              .absences[index].cause != ""
+                                              ? currentUser.semesters[0]
+                                              .absences[index].cause
+                                              : "Inconnue",
+                                          style: TextStyle(
+                                            color: currentUser.semesters[0]
+                                                .absences[index].justified
+                                                ? Colors.green
+                                                : Colors.red,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                      ),
+                                    ]),
+                                  ],
+                                ),
+                              );
+                            },
+                            separatorBuilder: (BuildContext context,
+                                int index) => const Divider(),
+                          );
+                        }
+                      }
+                      if(state == DisplayScreenState.Grades) {
+                        List<Grade> grades = currentUser.semesters[0].compactAll();
+                        if (grades.length > 0) {
+                          return ListView.separated(
+                            scrollDirection: Axis.vertical,
+                            shrinkWrap: true,
+                            physics: ClampingScrollPhysics(),
+                            padding: const EdgeInsets.all(0),
+                            itemCount: grades.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              return grades[index].buildRender();
+                            },
+                            separatorBuilder: (BuildContext context,
+                                int index) => const Divider(
+                              height: 1,
+                              thickness: 1,
+                            ),
+                          );
+                        }
+                      }
+                      if(state == DisplayScreenState.Loading) {
+                        return SizedBox(
+                            width: double.infinity, // set this
+                            height: 500,
+                            child: Center(
+                              //crossAxisAlignment: CrossAxisAlignment.center,
+                              //mainAxisAlignment: MainAxisAlignment.center,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.asset("assets/images/info_iut.gif", width: 250,),
+                                  Text(
+                                    "Loading...",
+                                    style: TextStyle(
+                                      fontSize: 30,
+                                      color: Colors.lightBlue,
+                                    ),
+                                  )
+                                ],
+                              ),
+                            )
+                        );
+                      }
+                      return SizedBox(
+                          width: double.infinity, // set this
+                          height: 500,
+                          child: Center(
+                            //crossAxisAlignment: CrossAxisAlignment.center,
+                            //mainAxisAlignment: MainAxisAlignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset("assets/images/empty.png"),
+                                Text(
+                                  "Wow. Such empty!",
+                                  style: TextStyle(
+                                    fontSize: 30,
+                                    color: Colors.grey,
+                                  ),
+                                )
+                              ],
+                            ),
+                          )
+                      );
+                    }
                 ),
               ],
             );
