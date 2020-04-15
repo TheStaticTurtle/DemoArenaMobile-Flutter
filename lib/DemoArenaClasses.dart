@@ -25,16 +25,21 @@ class Semester {
   List<Grade> compactAll() {
     List<Grade> list = new  List<Grade>();
     if(this.moyGen != null) {
+      this.moyGen.semester = this;
       list.add(this.moyGen);
     }
     for(Grade ue in this.uesMoy) {
+      ue.semester = this;
       list.add(ue);
     }
     for(UE ue in this.ues) {
+      ue.semester = this;
       list.add(ue);
       for(Course course in ue.courses) {
+        course.semester = this;
         list.add(course);
         for(Grade grade in course.grades) {
+          grade.semester = this;
           list.add(grade);
         }
       }
@@ -53,6 +58,8 @@ class Grade {
   double coeff = 0;
   String type = "GRADE";
   bool showId = true;
+
+  Semester semester;
 
   Map<String,Color> colorsForType =  {
     "GRADE": Color.fromARGB(6,60,255,0),
@@ -93,27 +100,49 @@ class Grade {
                 ),
               ),
               Table(
-                columnWidths: {0: FractionColumnWidth(.4)},
+                columnWidths: {0: FractionColumnWidth(.35)},
                 children: [
                   TableRow(
                     children: [
                       TableCell(
                         child: Text(
-                          " "+(this.grade>=0 ? "Note: "+this.grade.toString()+(this.outof != -1 ? "/"+this.outof.toString() : "") : "Non noter"),
+                            " "+
+                            (
+                                this.grade>=0 ?
+                                  "Note: "+
+                                  this.grade.toString()+
+                                  (this.outof != -1 ? "/"+this.outof.toString() : "")
+                                :
+                                  (this.type == "GRADE" ? "Non noter" : (this.type == "UE" ? "Non noter" : "Aucune note"))
+                            ),
                           style: TextStyle(
-                            fontSize: 17,
+                            fontSize: 16,
                             color: Colors.black45,
                           ),
                         ),
                       ),
                       TableCell(
-                        child: Text(
-                          " "+(this.min_grade >=0 ? "Min" : "") + (this.max_grade >=0 ? "/Max/" : "") + (this.coeff >=0 ? "Coeff" : "") + " " +
-                            (this.min_grade >=0 ? this.min_grade.toString()+"" : "") + (this.max_grade >=0 ? "/"+this.max_grade.toString()+"/" : "") + (this.coeff >=0 ? this.coeff.toString() : ""),
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: Colors.black45,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            new Text(
+                              this.grade>=0 && !(this.semester.done && this.type == "COURSE") ?
+                              (
+                                  " "+
+                                      (this.min_grade >=0 ? "Min" : "") +
+                                      (this.max_grade >=0 ? "/Max/" : "") +
+                                      (this.coeff >=0 ? "Coeff" : "") + " " +
+                                      (this.min_grade >=0 ? this.min_grade.toString()+"" : "") +
+                                      (this.max_grade >=0 ? "/"+this.max_grade.toString()+"/" : "") +
+                                      (this.coeff >=0 ? this.coeff.toString() : "")
+                              )
+                                  : (this.coeff >0 ? "Coeff "+this.coeff.toString() : ""),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black45,
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     ]

@@ -224,7 +224,7 @@ class DemoArenaUtils {
               currentUE.grade = double.parse(el.children[2].text);
               currentUE.coeff = double.parse(el.children[2].text);
 
-              RegExp exp2 = new RegExp(r"(\\d+.\\d+)/(\\d+.\\d+)");
+              RegExp exp2 = new RegExp(r"(\d+.\d+)/(\d+.\d+)");
               Iterable<RegExpMatch> matches2 = exp2.allMatches(el.outerHtml);
               if (matches2.length > 0) {
                 var match = matches2.elementAt(0);
@@ -253,6 +253,7 @@ class DemoArenaUtils {
           } else {
             if (el.attributes["class"] != null && el.attributes["class"].contains("notes_bulletin_row_ue")) {
               currentUE = new UE();
+              currentUE.semester = user.semesters[0];
 
               RegExp exp = new RegExp(r"</span>(.*)<br>(.*)</td>");
               Iterable<RegExpMatch> matches = exp.allMatches(el.outerHtml);
@@ -265,9 +266,9 @@ class DemoArenaUtils {
               }
 
               String gradeText = el.children[2].text;
-              String coeffText = el.children[2].text;
+              String coeffText = el.children[4].text;
               if (gradeText.isEmpty) {
-                currentUE.grade = -1;
+                  currentUE.grade = -1;
               } else {
                 currentUE.grade = double.parse(gradeText);
               }
@@ -276,15 +277,19 @@ class DemoArenaUtils {
               } else {
                 currentUE.coeff = double.parse(coeffText);
               }
+              cupertino.debugPrint(currentUE.grade.toString());
 
               currentUE.min_grade = -1;
               currentUE.max_grade = -1;
+
+              currentUE.semester = user.semesters[0];
 
               user.semesters[0].ues.add(currentUE);
             } else if (el.attributes["class"] != null && el.attributes["class"].contains("toggle4")) {
               Grade grade = new Grade();
 
               grade.name = el.children[3].text;
+              grade.semester = user.semesters[0];
 
               String coeffText = el.children[6].text.replaceAll("(", "")
                   .replaceAll(")", "");
@@ -294,7 +299,7 @@ class DemoArenaUtils {
                 grade.coeff = double.parse(coeffText);
               }
 
-              String gradeText = el.children[6].text;
+              String gradeText = el.children[4].text;
               List<String> gradesTexts = gradeText.split("/");
 
               try {
@@ -318,6 +323,7 @@ class DemoArenaUtils {
               currentCourse.grades.add(grade);
             } else {
               currentCourse = new Course();
+              currentCourse.semester = user.semesters[0];
               currentCourse.id = el.children[1].text;
               currentCourse.name = el.children[2].text;
               try {
@@ -328,8 +334,9 @@ class DemoArenaUtils {
               }
               currentCourse.coeff = double.parse(el.children[6].text);
 
-              RegExp exp = new RegExp(r"(\\d+.\\d+)/(\\d+.\\d+)");
+              RegExp exp = new RegExp(r"(\d+.\d+)/(\d+.\d+)");
               Iterable<RegExpMatch> matches = exp.allMatches(el.outerHtml);
+              cupertino.debugPrint(matches.toList().toString());
               if (matches.length > 0) {
                 var match = matches.elementAt(0);
                 try {
@@ -354,7 +361,7 @@ class DemoArenaUtils {
           double totalNotes = 0;
           double totalCoeff = 0;
           for(Course cr in ue.courses) {
-            if(cr.grade > 0) {
+            if(cr.grade >= 0) {
               totalNotes += cr.grade * cr.coeff;
               totalCoeff += cr.coeff;
             }
@@ -363,7 +370,7 @@ class DemoArenaUtils {
           moy.id = "BONUS";
           moy.name = ue.id;
           moy.coeff = -1;
-          moy.grade = totalCoeff > 0 ? ((totalNotes / totalCoeff)*100.0).round() /100.0 :( totalNotes *100.0).round() /100.0;
+          moy.grade = totalCoeff > 0 ? ((totalNotes / totalCoeff)*100.0).round() /100.0 : -1;
           moy.max_grade = -1;
           moy.min_grade = -1;
           moy.outof = -1;
@@ -375,7 +382,7 @@ class DemoArenaUtils {
           double totalNotes = 0;
           double totalCoeff = 0;
           for(Course cr in ue.courses) {
-            if(cr.grade > 0) {
+            if(cr.grade >= 0) {
               totalNotes += cr.grade * cr.coeff;
               totalCoeff += cr.coeff;
             }
@@ -383,8 +390,8 @@ class DemoArenaUtils {
           Grade moy = new Grade();
           moy.id = "MOY";
           moy.name = ue.name;
-          moy.coeff = totalCoeff;
-          moy.grade = ((totalNotes / totalCoeff)*100.0).round() /100.0;
+          moy.coeff = ue.coeff;
+          moy.grade = totalCoeff > 0 ? ((totalNotes / totalCoeff)*100.0).round() /100.0 : -1;
           moy.max_grade = -1;
           moy.min_grade = -1;
           moy.type = "MOY";
@@ -397,12 +404,14 @@ class DemoArenaUtils {
       double totalCoeff = 0.0;
       double noteOffset = 0.0;
       for(Grade gr in user.semesters[0].uesMoy) {
-        if(gr.type == "MOY") {
-          totalNotes += gr.grade * gr.coeff;
-          totalCoeff += gr.coeff;
-        }
-        if(gr.type == "BONUS") {
-          noteOffset += gr.grade;
+        if(gr.grade != -1) {
+          if(gr.type == "MOY") {
+            totalNotes += gr.grade * gr.coeff;
+            totalCoeff += gr.coeff;
+          }
+          if(gr.type == "BONUS") {
+            noteOffset += gr.grade;
+          }
         }
       }
       Grade g = new Grade();
@@ -412,7 +421,7 @@ class DemoArenaUtils {
       g.coeff = -1;
       g.max_grade = -1;
       g.min_grade = -1;
-      g.grade =  ((totalNotes / totalCoeff)*100.0).round() /100.0;
+      g.grade = totalCoeff > 0 ? ((totalNotes / totalCoeff)*100.0).round() /100.0 : -1;
       g.grade += noteOffset;
       g.showId = false;
       user.semesters[0].moyGen = g;
