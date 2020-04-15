@@ -108,12 +108,12 @@ class Grade {
                         child: Text(
                             " "+
                             (
-                                this.grade>=0 ?
+                                this.grade>=0 && (this.coeff>0 ||this.type == "MOYGEN") ?
                                   "Note: "+
                                   this.grade.toString()+
                                   (this.outof != -1 ? "/"+this.outof.toString() : "")
                                 :
-                                  (this.type == "GRADE" ? "Non noter" : (this.type == "UE" ? "Non noter" : "Aucune note"))
+                                  (this.type == "GRADE" ? "Non noter" : (this.type == "UE" && !this.semester.done? "" : "Aucune note"))
                             ),
                           style: TextStyle(
                             fontSize: 16,
@@ -126,7 +126,7 @@ class Grade {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: <Widget>[
                             new Text(
-                              this.grade>=0 && !(this.semester.done && this.type == "COURSE") ?
+                              this.grade>=0 && !(this.semester.done && this.type == "COURSE") && this.coeff>0 ?
                               (
                                   " "+
                                       (this.min_grade >=0 ? "Min" : "") +
