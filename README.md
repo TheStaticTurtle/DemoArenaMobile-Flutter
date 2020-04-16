@@ -7,8 +7,8 @@ It has been rewritted from https://github.com/TurtleForGaming/DemoArenaMobile to
 You can download the latest release file [here](https://github.com/TurtleForGaming/DemoArenaMobile/releases)
 
 ### Screenshot
-![First login](https://i.imgur.com/IlOB1nj.jpg)  ![Captcha](https://i.imgur.com/QgxsouX.jpg)  
-![Current semester grade](https://i.imgur.com/TRlkQx8.jpg)  ![Current semester abcenses](https://i.imgur.com/SLC7DQn.jpg)  ![Finished semester](https://i.imgur.com/Ow2GS1P.jpg)
+![First login](https://i.imgur.com/WJ6Mdig.jpg)  ![Captcha](https://i.imgur.com/Ap2YHGC.jpg)  
+![Current semester grade](https://i.imgur.com/ZLEuB7X.jpg)  ![Current semester abcenses](https://i.imgur.com/oZTOUJP.jpg)  ![Finished semester](https://i.imgur.com/R6fH3JN.jpg)
 
 ### There are better ways to do it
 I know I didn't wrote the best code or use the best method 
