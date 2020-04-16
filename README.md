@@ -1,16 +1,16 @@
-# demoarenamobile_flutter_port
+# DemoArenaMobile-Flutter
+This a application for studuents of the IUT of Belfort Monbeliard to see their grades without creating a reverse proxy to the university server.
 
-Demoarena interface for mobile
+It has been rewritted from https://github.com/TurtleForGaming/DemoArenaMobile to make it compatible with ios
 
-## Getting Started
+### Download
+You can download the latest release file [here](https://github.com/TurtleForGaming/DemoArenaMobile/releases)
 
-This project is a starting point for a Flutter application.
+### Screenshot
+![First login](https://i.imgur.com/pPaxych.jpg)  ![Captcha](https://i.imgur.com/WUjrsZF.jpg)  
+![Current semester grade](https://i.imgur.com/i7hm0ra.jpg)  ![Current semester abcenses](https://i.imgur.com/I1H8W9K.jpg)  ![Finished semester](https://i.imgur.com/pA32O0i.jpg)
 
-A few resources to get you started if this is your first Flutter project:
+### There are better ways to do it
+I know I didn't wrote the best code or use the best method 
+(For instance accessing the iut should use a dynamic proxy not doing remote command execution with a python script)
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
