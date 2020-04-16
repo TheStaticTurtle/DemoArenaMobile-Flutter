@@ -1,18 +1,20 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:demoarenamobile_flutter_port/DemoArenaUtils.dart';
 import 'package:demoarenamobile_flutter_port/Utils.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'DemoArenaClasses.dart';
 import 'SSHManager.dart';
 import 'Utils.dart';
+import 'Translation.dart';
 
 void main() => runApp(MyApp());
 
+var language = new LanguageManager(Locale.FR);
 var ssh = new SSHManager();
 var demoarena = new DemoArenaUtils(ssh);
 
@@ -20,12 +22,30 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'DemoArena',
-      theme: ThemeData(
-        primarySwatch: Colors.red,
-      ),
-      home: LoginPage(title: 'DemoArena'),
+    final storage = new FlutterSecureStorage();
+    return FutureBuilder<Map<String, String>>(
+      future: storage.readAll(),
+      builder: (BuildContext context, AsyncSnapshot<Map<String, String>> snapshot) {
+        if (snapshot.hasData) {
+          language = new LanguageManager(Locale.findByCode(snapshot.data["language"]));
+          return MaterialApp(
+              title: language.app_name,
+              theme: ThemeData(
+                primarySwatch: Colors.red,
+              ),
+              home: LoginPage(title: language.app_name),
+          );
+        } else {
+          language = new LanguageManager(Locale.FR);
+          return MaterialApp(
+              title: language.app_name,
+              theme: ThemeData(
+                primarySwatch: Colors.red,
+              ),
+              home: LoginPage(title: language.app_name),
+          );
+        }
+      },
     );
   }
 }
@@ -40,8 +60,8 @@ class LoginPage extends StatefulWidget {
 }
 class _LoginPage extends State<LoginPage> {
   String iutLogo = "assets/images/info_iut_still.gif";
-  String statusText = "Please login";
-  String formValidationButtonText = "Login";
+  String statusText = language.status_text_please_login;
+  String formValidationButtonText = language.login_connect;
   bool   showCaptcha = false;
   String base64CapchaImage;
 
@@ -62,10 +82,8 @@ class _LoginPage extends State<LoginPage> {
           actions: <Widget>[
             // usually buttons at the bottom of the dialog
             new FlatButton(
-              child: new Text("Report"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              child: new Text(language.tooltips_report),
+              onPressed: () => openUrl("https://github.com/TurtleForGaming/DemoArenaMobile/issues/new/choose"),
             ),
 
             new FlatButton(
@@ -84,7 +102,7 @@ class _LoginPage extends State<LoginPage> {
                       actions: <Widget>[
                         // usually buttons at the bottom of the dialog
                         new FlatButton(
-                          child: new Text("Close"),
+                          child: new Text(language.tooltips_close),
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
@@ -96,7 +114,7 @@ class _LoginPage extends State<LoginPage> {
               },
             ),
             new FlatButton(
-              child: new Text("Close"),
+              child: new Text(language.tooltips_close),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -113,14 +131,14 @@ class _LoginPage extends State<LoginPage> {
       String text = "";
       switch(rt) {
         case ReturnState.SemesterCaptchaInvalid:
-          text = "Captcha invalide";
+          text = language.toast_captcha_invalid;
           break;
         case ReturnState.SemesterINEInvalid:
-          text = "Numero etudiant invalide";
+          text = language.toast_ine_invalid;
           break;
         case ReturnState.GateInfoUnknownError:
           if(err.error.toString().contains("Auth fail")) {
-            text = "Identifiants incorrects";
+            text = language.toast_login_incorrect;
           } else {
             renderUnkownError(err);
             return;
@@ -130,7 +148,7 @@ class _LoginPage extends State<LoginPage> {
         // TODO: Handle this case.
           break;
         case ReturnState.DemoarenaNoAMIGUS:
-          text = "Identifiants incorrects";
+          text =language.toast_login_incorrect;
           break;
         case ReturnState.DemoarenaScriptError:
           renderUnkownError(err);
@@ -152,47 +170,52 @@ class _LoginPage extends State<LoginPage> {
       );
     }
   }
+  LoginScreenState _loginScreenState = LoginScreenState.Login;
   updateStatus(LoginScreenState st) {
+    _loginScreenState = st;
     setState(() {
       if (st == LoginScreenState.Login) {
         iutLogo = "assets/images/info_iut_still.gif";
-        formValidationButtonText = "Login";
-        statusText = "Please login";
+        formValidationButtonText = language.login_connect;
+        statusText = language.login_please_connect;
         showCaptcha = false;
       } else if (st == LoginScreenState.Login_in) {
         iutLogo = "assets/images/info_iut.gif";
-        formValidationButtonText = "Login";
-        statusText = "Connecting to gate-info";
+        formValidationButtonText = language.login_connect;
+        statusText = language.status_text_connection_gteinfo;
         showCaptcha = false;
       } else if (st == LoginScreenState.Logged_in) {
         iutLogo = "assets/images/info_iut.gif";
-        formValidationButtonText = "Login";
-        statusText = "Connected to gate-info";
+        formValidationButtonText = language.login_connect;
+        statusText = language.status_text_connected_gteinfo;
         showCaptcha = false;
       } else if (st == LoginScreenState.LoadingCaptcha) {
         iutLogo = "assets/images/info_iut.gif";
-        formValidationButtonText = "Login";
-        statusText = "Trying to connect to demoarena";
+        formValidationButtonText = language.login_connect;
+        statusText = language.status_text_connection_dmoaren;
         showCaptcha = false;
       }  else if (st == LoginScreenState.EnterCaptcha) {
         iutLogo = "assets/images/info_iut_still.gif";
-        formValidationButtonText = "Validate";
-        statusText = "Enter the captcha";
+        formValidationButtonText = language.login_validate;
+        statusText = language.status_text_enter_captcha;
         showCaptcha = true;
       } else if (st == LoginScreenState.ValidatingCaptcha) {
         iutLogo = "assets/images/info_iut.gif";
-        formValidationButtonText = "Validate";
-        statusText = "Try-ing to validate the captcha";
+        formValidationButtonText = language.login_validate;
+        statusText = language.status_text_enter_validcaptcha;
         showCaptcha = true;
       }
     });
   }
 
-  Future<void> connectToGateInfo(BuildContext ctx) async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
+  Future<void> connectToGateInfo(BuildContext ctx, String password) async {
+    final storage = new FlutterSecureStorage();
+    Map<String, String> allValues = await storage.readAll();
+    debugPrint(allValues.toString());
+    //SharedPreferences pref = await SharedPreferences.getInstance();
     updateStatus(LoginScreenState.Login_in);
 
-    demoarena.updateCredentials(pref.getString("username"),pref.getString("password"));
+    demoarena.updateCredentials(allValues["username"],(password != null ? password : allValues["password"]));
     Response gateinfoConnectionCallback = await demoarena.connectToGateInfo();
     if(gateinfoConnectionCallback.return_state == ReturnState.Success) {
       updateStatus(LoginScreenState.Logged_in);
@@ -217,10 +240,11 @@ class _LoginPage extends State<LoginPage> {
     }
   }
   Future<void> validateCaptcha(BuildContext ctx) async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
+    final storage = new FlutterSecureStorage();
+    Map<String, String> allValues = await storage.readAll();
     updateStatus(LoginScreenState.ValidatingCaptcha);
 
-    Response captchaValidationAndCurrentSemesterCallback = await demoarena.validateCaptchaAndGetCurrentSemester(intputController_captcha.text,pref.getString("ine"));
+    Response captchaValidationAndCurrentSemesterCallback = await demoarena.validateCaptchaAndGetCurrentSemester(intputController_captcha.text,allValues["ine"]);
     if(captchaValidationAndCurrentSemesterCallback.return_state == ReturnState.Success) {
     } else {
       if( captchaValidationAndCurrentSemesterCallback.return_state == ReturnState.SemesterINEInvalid ||
@@ -241,24 +265,6 @@ class _LoginPage extends State<LoginPage> {
           )
       ),
     );
-
-    //updateStatus(LoginScreenState.Login);
-    //ssh.disconnect();
-    //setState(() {
-    //  iutLogo = "assets/images/info_iut_still.gif";
-    //  statusText = "Done";
-    //});
-
-    /*Fluttertoast.showToast(
-        msg: captchaValidationAndCurrentSemesterCallback.data,
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0
-    );*/
-
   }
 
   @override
@@ -274,17 +280,21 @@ class _LoginPage extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final _formKey = GlobalKey<FormState>();
-    return FutureBuilder<SharedPreferences>(
-        future: SharedPreferences.getInstance(),
-        builder: (BuildContext context, AsyncSnapshot<SharedPreferences> snapshot) {
+    final storage = new FlutterSecureStorage();
+    return FutureBuilder<Map<String, String>>(
+        future: storage.readAll(),
+        builder: (BuildContext context, AsyncSnapshot<Map<String, String>> snapshot) {
           Widget children;
-
           if (snapshot.hasData) {
-            String _username = snapshot.data.getString("username") ?? "";
-            String _password = snapshot.data.getString("password") ?? "";
-            String _ine = snapshot.data.getString("ine") ?? "";
+            String _username = snapshot.data["username"] ?? "";
+            String _password = snapshot.data["password"] ?? "";
+            String _ine = snapshot.data["ine"] ?? "";
 
-            switchController_savePassword = snapshot.data.getBool("save_pass") ?? true;
+            if(snapshot.data["save_pass"] != null) {
+              switchController_savePassword = snapshot.data["save_pass"] == "true";
+            } else {
+              switchController_savePassword = true;
+            }
 
             intputController_username.text = _username;
             intputController_password.text = _password;
@@ -315,14 +325,14 @@ class _LoginPage extends State<LoginPage> {
                                 TableRow(children: [
                                   TableCell(
                                     verticalAlignment: TableCellVerticalAlignment.middle,
-                                    child: Text( "Enter your username: " ),
+                                    child: Text(language.login_username),
                                   ),
                                   TableCell(
                                     verticalAlignment: TableCellVerticalAlignment.middle,
                                     child: TextFormField(
                                       controller: intputController_username,
                                       validator: (String value) {
-                                        if(value.isEmpty) return "Shouldn't be empty";
+                                        if(value.isEmpty) return language.login_format_empty;
                                         return null;
                                       },
                                     ),
@@ -331,7 +341,7 @@ class _LoginPage extends State<LoginPage> {
                                 TableRow(children: [
                                   TableCell(
                                     verticalAlignment: TableCellVerticalAlignment.middle,
-                                    child: Text( "Enter your password: " ),
+                                    child: Text(language.login_password),
                                   ),
                                   TableCell(
                                     verticalAlignment: TableCellVerticalAlignment.middle,
@@ -339,7 +349,7 @@ class _LoginPage extends State<LoginPage> {
                                       obscureText: true,
                                       controller: intputController_password,
                                       validator: (String value) {
-                                        if(value.isEmpty) return "Shouldn't be empty";
+                                        if(value.isEmpty) return language.login_format_empty;
                                         return null;
                                       },
                                     ),
@@ -348,16 +358,16 @@ class _LoginPage extends State<LoginPage> {
                                 TableRow(children: [
                                   TableCell(
                                     verticalAlignment: TableCellVerticalAlignment.middle,
-                                    child: Text( "Enter your INE number: " ),
+                                    child: Text(language.login_ine),
                                   ),
                                   TableCell(
                                     verticalAlignment: TableCellVerticalAlignment.middle,
                                     child: TextFormField(
                                       controller: intputController_INE,
                                       validator: (String value) {
-                                        if(value.length != 8) return "Ine format invalid (len!=8)";
-                                        if(!isNumeric(value)) return "Ine format invalid (not numeric)";
-                                        if( value.contains("Infinity") || value.contains("+") || value.contains("-") ) return "Do not try to mess with me";
+                                        if(value.length != 8) return language.login_format_ine_len;
+                                        if(!isNumeric(value)) return language.login_format_ine_nan;
+                                        if( value.contains("Infinity") || value.contains("+") || value.contains("-") ) return language.login_format_donotmesswithme;
                                         return null;
                                       },
                                     ),
@@ -378,12 +388,12 @@ class _LoginPage extends State<LoginPage> {
                                               children: [
                                                 TableCell(
                                                   verticalAlignment: TableCellVerticalAlignment.middle,
-                                                  child: Text( "Enter the captcha: " ),
+                                                  child: Text(language.login_captcha),
                                                 ),
                                                 TextFormField(
                                                   controller: intputController_captcha,
                                                   validator: (String value) {
-                                                    if(value.length != 6) return "Chapcha format invalid (len!=6)";
+                                                    if(value.length != 6) return language.login_format_captcha;
                                                     return null;
                                                   },
                                                 ),
@@ -407,18 +417,18 @@ class _LoginPage extends State<LoginPage> {
                                 child: RaisedButton(
                                   textColor: Colors.white,
                                   color: Colors.redAccent,
-                                  onPressed: () => {
+                                  onPressed: () async => {
                                     if (_formKey.currentState.validate()) {
-                                      snapshot.data.setString("username", intputController_username.text),
-                                      snapshot.data.setString("ine", intputController_INE.text),
-                                      snapshot.data.setBool("save_pass", switchController_savePassword),
+                                      await storage.write(key: "username",  value: intputController_username.text),
+                                      await storage.write(key: "ine",       value: intputController_INE.text),
+                                      await storage.write(key: "save_pass", value: switchController_savePassword.toString()),
                                       if(switchController_savePassword) {
-                                        snapshot.data.setString("password", intputController_password.text),
+                                        await storage.write(key: "password", value: intputController_password.text),
                                       } else {
-                                        snapshot.data.setString("password", ""),
+                                        await storage.write(key: "password", value: ""),
                                       },
                                       if(!showCaptcha) {
-                                        connectToGateInfo(context)
+                                        connectToGateInfo(context,intputController_password.text)
                                       } else {
                                         validateCaptcha(context)
                                       }
@@ -447,7 +457,7 @@ class _LoginPage extends State<LoginPage> {
                                       ),
                                       TableCell(
                                         verticalAlignment: TableCellVerticalAlignment.middle,
-                                        child: Text( "Save password" ),
+                                        child: Text(language.login_savepwd),
                                       ),
                                     ]
                                   )
@@ -472,13 +482,33 @@ class _LoginPage extends State<LoginPage> {
                   // action button
                   IconButton(
                     icon: Icon(Icons.error),
-                    tooltip: 'Report a bug',
+                    tooltip: language.tooltips_report,
                     onPressed: () => openUrl("https://github.com/TurtleForGaming/DemoArenaMobile/issues/new/choose"),
                   ),
-                  IconButton(
+                  PopupMenuButton<Locale>(
+                    onSelected: (locale) async => {
+                      await storage.write(key: "language", value: locale.languageCode),
+                      language = new LanguageManager(locale),
+                      updateStatus(_loginScreenState),
+                      Fluttertoast.showToast(
+                        msg: language.restart_required,
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.BOTTOM,
+                        timeInSecForIosWeb: 1,
+                        backgroundColor: Colors.black87,
+                        textColor: Colors.white,
+                        fontSize: 14.0
+                      )
+                    },
                     icon: Icon(Icons.language),
-                    tooltip: 'Change language',
-                    onPressed: null,
+                    itemBuilder: (BuildContext context) {
+                      return Locale.getAllLocales().map((Locale locale) {
+                        return PopupMenuItem<Locale>(
+                          value: locale,
+                          child: Text(locale.language),
+                        );
+                      }).toList();
+                    },
                   ),
                 ],
               ),
@@ -511,7 +541,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
           actions: <Widget>[
             // usually buttons at the bottom of the dialog
             new FlatButton(
-              child: new Text("Report"),
+              child: new Text(language.tooltips_report),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -533,7 +563,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                         actions: <Widget>[
                           // usually buttons at the bottom of the dialog
                           new FlatButton(
-                            child: new Text("Close"),
+                            child: new Text(language.tooltips_close),
                             onPressed: () {
                               Navigator.of(context).pop();
                             },
@@ -545,7 +575,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
               },
             ),
             new FlatButton(
-              child: new Text("Close"),
+              child: new Text(language.tooltips_close),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -562,14 +592,14 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
       String text = "";
       switch(rt) {
         case ReturnState.SemesterCaptchaInvalid:
-          text = "Captcha invalide";
+          text = language.toast_captcha_invalid;
           break;
         case ReturnState.SemesterINEInvalid:
-          text = "Numero etudiant invalide";
+          text = language.toast_ine_invalid;
           break;
         case ReturnState.GateInfoUnknownError:
           if(err.error.toString().contains("Auth fail")) {
-            text = "Identifiants incorrects";
+            text = language.toast_login_incorrect;
           } else {
             renderUnkownError(err);
             return;
@@ -579,7 +609,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
         // TODO: Handle this case.
           break;
         case ReturnState.DemoarenaNoAMIGUS:
-          text = "Identifiants incorrects";
+          text = language.toast_login_incorrect;
           break;
         case ReturnState.DemoarenaScriptError:
           renderUnkownError(err);
@@ -601,109 +631,6 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
       );
     }
   }
-  /*updateStatus(LoginScreenState st) {
-    setState(() {
-      if (st == LoginScreenState.Login) {
-        iutLogo = "assets/images/info_iut_still.gif";
-        formValidationButtonText = "Login";
-        statusText = "Please login";
-        showCaptcha = false;
-      } else if (st == LoginScreenState.Login_in) {
-        iutLogo = "assets/images/info_iut.gif";
-        formValidationButtonText = "Login";
-        statusText = "Connecting to gate-info";
-        showCaptcha = false;
-      } else if (st == LoginScreenState.Logged_in) {
-        iutLogo = "assets/images/info_iut.gif";
-        formValidationButtonText = "Login";
-        statusText = "Connected to gate-info";
-        showCaptcha = false;
-      } else if (st == LoginScreenState.LoadingCaptcha) {
-        iutLogo = "assets/images/info_iut.gif";
-        formValidationButtonText = "Login";
-        statusText = "Trying to connect to demoarena";
-        showCaptcha = false;
-      }  else if (st == LoginScreenState.EnterCaptcha) {
-        iutLogo = "assets/images/info_iut_still.gif";
-        formValidationButtonText = "Validate";
-        statusText = "Enter the captcha";
-        showCaptcha = true;
-      } else if (st == LoginScreenState.ValidatingCaptcha) {
-        iutLogo = "assets/images/info_iut.gif";
-        formValidationButtonText = "Validate";
-        statusText = "Try-ing to validate the captcha";
-        showCaptcha = true;
-      }
-    });
-  }
-
-  Future<void> connectToGateInfo(BuildContext ctx) async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
-    updateStatus(LoginScreenState.Login_in);
-
-    demoarena.updateCredentials(pref.getString("username"),pref.getString("password"));
-    Response gateinfoConnectionCallback = await demoarena.connectToGateInfo();
-    if(gateinfoConnectionCallback.return_state == ReturnState.Success) {
-      updateStatus(LoginScreenState.Logged_in);
-    } else {
-      updateStatus(LoginScreenState.Login);
-      renderError(gateinfoConnectionCallback.return_state, gateinfoConnectionCallback.err);
-      return;
-    }
-    await connectToDemoarena(ctx);
-  }
-  Future<void> connectToDemoarena(BuildContext ctx) async {
-    updateStatus(LoginScreenState.LoadingCaptcha);
-    intputController_captcha.text = "";
-    Response demoarenaLoadingCallback = await demoarena.authenticateCASDemoarena();
-    if(demoarenaLoadingCallback.return_state == ReturnState.Success) {
-      setState(() {base64CapchaImage = demoarenaLoadingCallback.data;});
-      updateStatus(LoginScreenState.EnterCaptcha);
-    } else {
-      updateStatus(LoginScreenState.Login);
-      renderError(demoarenaLoadingCallback.return_state, demoarenaLoadingCallback.err);
-      return;
-    }
-  }
-  Future<void> validateCaptcha(BuildContext ctx) async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
-    updateStatus(LoginScreenState.ValidatingCaptcha);
-
-    demoarena.updateCredentials(pref.getString("username"),pref.getString("password"));
-    Response captchaValidationAndCurrentSemesterCallback = await demoarena.validateCaptchaAndGetCurrentSemester(intputController_captcha.text,pref.getString("ine"));
-    if(captchaValidationAndCurrentSemesterCallback.return_state == ReturnState.Success) {
-    } else {
-      if( captchaValidationAndCurrentSemesterCallback.return_state == ReturnState.SemesterINEInvalid ||
-          captchaValidationAndCurrentSemesterCallback.return_state == ReturnState.SemesterCaptchaInvalid ) {
-        await connectToDemoarena(ctx);
-        renderError(captchaValidationAndCurrentSemesterCallback.return_state,null);
-      } else {
-        renderError(captchaValidationAndCurrentSemesterCallback.return_state,captchaValidationAndCurrentSemesterCallback.err);
-      }
-      return;
-    }
-
-    updateStatus(LoginScreenState.Login);
-
-    ssh.disconnect();
-
-    setState(() {
-      iutLogo = "assets/images/info_iut_still.gif";
-      statusText = "Done";
-    });
-
-    Fluttertoast.showToast(
-        msg: captchaValidationAndCurrentSemesterCallback.data,
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0
-    );
-
-  }
-*/
 
   Semester _semesterDropDownSelected = null;
   User currentUser = null;
@@ -715,8 +642,8 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
 
   @override
   void initState() {
-    tabList.add(new Tab(text:'Grades',));
-    tabList.add(new Tab(text:'Absences',));
+    tabList.add(new Tab(text:language.display_grades,));
+    tabList.add(new Tab(text:language.display_absences,));
     _tabController = new TabController(vsync: this, length: tabList.length);
     _tabController.addListener(() => {
       setState(() {
@@ -731,7 +658,6 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
   }
 
   Future<void> loadPage(BuildContext ctx) async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
     setState( () {
       currentUser = demoarena.parseUserFormHTML();
       state = DisplayScreenState.Grades;
@@ -739,16 +665,15 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
   }
   Future<void> changeSemester(BuildContext ctx, String semId) async {
     Response semesterCallback = await demoarena.getSemester(semId);
-    SharedPreferences pref = await SharedPreferences.getInstance();
     if(semesterCallback.return_state == ReturnState.Success) {
       setState( () {
         currentUser = demoarena.parseUserFormHTML();
         state = DisplayScreenState.Grades;
 
         tabList.clear();
-        tabList.add(new Tab(text:'Grades',));
+        tabList.add(new Tab(text:language.display_grades,));
         if(!currentUser.semesters[0].done) {
-          tabList.add(new Tab(text:'Absences',));
+          tabList.add(new Tab(text:language.display_absences,));
         }
         _tabController = new TabController(vsync: this, length: tabList.length);
         _tabController.addListener(() => {
@@ -782,9 +707,10 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
     if(currentUser == null) {
       currentUser = demoarena.parseUserFormHTML();
     }
-    return FutureBuilder<SharedPreferences>(
-        future: SharedPreferences.getInstance(),
-        builder: (BuildContext context, AsyncSnapshot<SharedPreferences> snapshot) {
+    final storage = new FlutterSecureStorage();
+    return FutureBuilder<Map<String, String>>(
+        future: storage.readAll(),
+        builder: (BuildContext context, AsyncSnapshot<Map<String, String>> snapshot) {
           Widget children;
 
           if (snapshot.hasData) {
@@ -869,7 +795,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                                       TableCell(
                                         verticalAlignment: TableCellVerticalAlignment
                                             .middle,
-                                        child: Text("De: ",
+                                        child: Text(language.display_absences_from,
                                           style: TextStyle(
                                               fontSize: 20,
                                               fontWeight: FontWeight.bold
@@ -896,7 +822,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                                       TableCell(
                                         verticalAlignment: TableCellVerticalAlignment
                                             .middle,
-                                        child: Text("A: ",
+                                        child: Text(language.display_absences_to,
                                           style: TextStyle(
                                               fontSize: 20,
                                               fontWeight: FontWeight.bold
@@ -924,7 +850,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                                       TableCell(
                                         verticalAlignment: TableCellVerticalAlignment
                                             .middle,
-                                        child: Text("Raison: "),
+                                        child: Text(language.display_absences_reason),
                                       ),
                                       TableCell(
                                         verticalAlignment: TableCellVerticalAlignment
@@ -967,10 +893,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                               return grades[index].buildRender();
                             },
                             separatorBuilder: (BuildContext context,
-                                int index) => const Divider(
-                              height: 1,
-                              thickness: 1,
-                            ),
+                                int index) => Container()
                           );
                         }
                       }
@@ -986,7 +909,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                                 children: [
                                   Image.asset("assets/images/info_iut.gif", width: 250,),
                                   Text(
-                                    "Loading...",
+                                    language.display_loading,
                                     style: TextStyle(
                                       fontSize: 30,
                                       color: Colors.lightBlue,
@@ -1008,7 +931,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                               children: [
                                 Image.asset("assets/images/empty.png"),
                                 Text(
-                                  "Wow. Such empty!",
+                                  language.display_empty,
                                   style: TextStyle(
                                     fontSize: 30,
                                     color: Colors.grey,
@@ -1030,18 +953,38 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
 
           return Scaffold(
             appBar: AppBar(
-              title: Text("DemoArena"),
+              title: Text(language.app_name),
               actions: <Widget>[
                 // action button
                 IconButton(
                   icon: Icon(Icons.error),
-                  tooltip: 'Report a bug',
+                  tooltip: language.tooltips_report,
                   onPressed: () => openUrl("https://github.com/TurtleForGaming/DemoArenaMobile/issues/new/choose"),
                 ),
-                IconButton(
+                PopupMenuButton<Locale>(
+                  onSelected: (locale) async => {
+                    await storage.write(key: "language", value: locale.languageCode),
+                    language = new LanguageManager(locale),
+                    //updateStatus(_loginScreenState),
+                    Fluttertoast.showToast(
+                        msg: language.restart_required,
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.BOTTOM,
+                        timeInSecForIosWeb: 1,
+                        backgroundColor: Colors.black87,
+                        textColor: Colors.white,
+                        fontSize: 14.0
+                    )
+                  },
                   icon: Icon(Icons.language),
-                  tooltip: 'Change language',
-                  onPressed: null,
+                  itemBuilder: (BuildContext context) {
+                    return Locale.getAllLocales().map((Locale locale) {
+                      return PopupMenuItem<Locale>(
+                        value: locale,
+                        child: Text(locale.language),
+                      );
+                    }).toList();
+                  },
                 ),
               ],
             ),

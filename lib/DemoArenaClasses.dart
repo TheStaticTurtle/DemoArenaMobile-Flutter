@@ -1,4 +1,4 @@
-import 'package:demoarenamobile_flutter_port/LoginScreen.dart';
+import 'package:demoarenamobile_flutter_port/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -62,12 +62,12 @@ class Grade {
   Semester semester;
 
   Map<String,Color> colorsForType =  {
-    "GRADE": Color.fromARGB(6,60,255,0),
-    "COURSE": Color.fromARGB(13,255,210,0),
-    "UE": Color.fromARGB(20, 255,40,0),
-    "BONUS": Color.fromARGB(20,25,170,245),
-    "MOY": Color.fromARGB(20,25,170,245),
-    "MOYGEN": Color.fromARGB(33,27,171,246),
+    "GRADE": Color.fromARGB(25,60,255,0),
+    "COURSE": Color.fromARGB(30,255,210,0),
+    "UE": Color.fromARGB(40, 255,40,0),
+    "BONUS": Color.fromARGB(40,25,170,245),
+    "MOY": Color.fromARGB(40,25,170,245),
+    "MOYGEN": Color.fromARGB(50,27,171,246),
   };
 
   Map<String,EdgeInsets> paddingForType =  {
@@ -81,10 +81,18 @@ class Grade {
 
   Widget buildRender() {
     return Container(
-      constraints: new BoxConstraints(
-        minHeight: 70,
+      decoration: new BoxDecoration(
+        color: colorsForType[this.type],
+        border: Border(
+          top: (this.type == "UE" ? BorderSide(width: 1.5, color: Colors.black54) : (this.type == "COURSE" ? BorderSide(width: 0.75, color: Colors.black26) : BorderSide.none)),
+          right: BorderSide.none,
+          bottom: (this.type == "UE" || this.type == "COURSE" ? BorderSide(width: 0.75, color: Colors.black26) : (this.type == "GRADE" ? BorderSide(width: 0.5, color: Colors.black12) : BorderSide.none)),
+          left: BorderSide.none,
+        ),
       ),
-      color: colorsForType[this.type],
+      constraints: new BoxConstraints(
+        minHeight: 75,
+      ),
       child: Padding(
         padding: paddingForType[this.type],
         child: Container(
@@ -100,32 +108,15 @@ class Grade {
                 ),
               ),
               Table(
-                columnWidths: {0: FractionColumnWidth(.35)},
+                columnWidths: {0: FractionColumnWidth(.65)},
                 children: [
                   TableRow(
                     children: [
                       TableCell(
-                        child: Text(
-                            " "+
-                            (
-                                this.grade>=0 && (this.coeff>0 ||this.type == "MOYGEN") ?
-                                  "Note: "+
-                                  this.grade.toString()+
-                                  (this.outof != -1 ? "/"+this.outof.toString() : "")
-                                :
-                                  (this.type == "GRADE" ? "Non noter" : (this.type == "UE" && !this.semester.done? "" : "Aucune note"))
-                            ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black45,
-                          ),
-                        ),
-                      ),
-                      TableCell(
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: <Widget>[
-                            new Text(
+                            Text(
                               this.grade>=0 && !(this.semester.done && this.type == "COURSE") && this.coeff>0 ?
                               (
                                   " "+
@@ -135,11 +126,45 @@ class Grade {
                                       (this.min_grade >=0 ? this.min_grade.toString()+"" : "") +
                                       (this.max_grade >=0 ? "/"+this.max_grade.toString()+"/" : "") +
                                       (this.coeff >=0 ? this.coeff.toString() : "")
-                              )
-                                  : (this.coeff >0 ? "Coeff "+this.coeff.toString() : ""),
+                              ) : (this.coeff >0 ? "Coeff "+this.coeff.toString() : ""),
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.black45,
+                              ),
+                            ),
+                          ]
+                        ),
+                      ),
+                      TableCell(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            Text(
+                              " "+
+                                  (
+                                      this.grade>=0 && (this.coeff>0 ||this.type == "MOYGEN") ?
+                                      "" :
+                                      (this.type == "GRADE" ? "Non noter" : (this.type == "UE" && !this.semester.done? "" : "Aucune note"))
+                                  ),
+                              style: TextStyle(
+                                  fontSize: 16.5,
+                                  color: Colors.black54,
+                                  fontWeight: FontWeight.normal
+                              ),
+                            ),
+                            Text(
+                                  (
+                                      this.grade>=0 && (this.coeff>0 ||this.type == "MOYGEN") ?
+
+                                          this.grade.toString()+
+                                          (this.outof != -1 ? "/"+this.outof.toString() : "")
+                                          :
+                                      (this.type == "GRADE" ? "" : (this.type == "UE" && !this.semester.done? "" : ""))
+                                  ),
+                              style: TextStyle(
+                                  fontSize: 16.5,
+                                  color: Colors.black54,
+                                  fontWeight: FontWeight.bold
                               ),
                             ),
                           ],
