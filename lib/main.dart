@@ -446,12 +446,19 @@ class _LoginPage extends State<LoginPage> {
                                 children: [
                                   TableRow(
                                     children: [
-                                      Switch(
+                                      Checkbox(
                                         value: switchController_savePassword,
-                                        onChanged: (value) {
-                                          print(value);
+                                        onChanged: (value) async {
+                                          await storage.write(key: "save_pass", value: value.toString());
+                                          await storage.write(key: "username",  value: intputController_username.text);
+                                          await storage.write(key: "ine",       value: intputController_INE.text);
+                                          if(switchController_savePassword) {
+                                            await storage.write(key: "password", value: intputController_password.text);
+                                          } else {
+                                            await storage.write(key: "password", value: "");
+                                          }
                                           setState(() {
-                                            switchController_savePassword = false;
+                                            switchController_savePassword = value;
                                           });
                                         },
                                       ),
@@ -483,7 +490,7 @@ class _LoginPage extends State<LoginPage> {
                   IconButton(
                     icon: Icon(Icons.error),
                     tooltip: language.tooltips_report,
-                    onPressed: () => openUrl("https://github.com/TurtleForGaming/DemoArenaMobile/issues/new/choose"),
+                    onPressed: () => openUrl("https://github.com/TheStaticTurtle/DemoArenaMobile-Flutter/issues/new/choose"),
                   ),
                   PopupMenuButton<Locale>(
                     onSelected: (locale) async => {
