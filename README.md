@@ -7,8 +7,11 @@ It has been rewritted from https://github.com/TurtleForGaming/DemoArenaMobile to
 You can download the latest release file [here](https://github.com/TurtleForGaming/DemoArenaMobile/releases)
 
 ### Screenshot
-![First login](https://i.imgur.com/pPaxych.jpg)  ![Captcha](https://i.imgur.com/WUjrsZF.jpg)  
-![Current semester grade](https://i.imgur.com/i7hm0ra.jpg)  ![Current semester abcenses](https://i.imgur.com/I1H8W9K.jpg)  ![Finished semester](https://i.imgur.com/pA32O0i.jpg)
+![First login](https://i.imgur.com/WJ6Mdig.jpg)  ![Captcha](https://i.imgur.com/Ap2YHGC.jpg)  
+![Current semester grade](https://i.imgur.com/ZLEuB7X.jpg)  ![Current semester abcenses](https://i.imgur.com/oZTOUJP.jpg)  ![Finished semester](https://i.imgur.com/R6fH3JN.jpg)
+
+### Build
+Android need to build with --no-shrink if else JSCH Fails
 
 ### There are better ways to do it
 I know I didn't wrote the best code or use the best method 
