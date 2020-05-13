@@ -110,7 +110,7 @@ class LanguageManager {
       'login_format_captcha'          : 'Invalid length',
 
       'status_text_please_login'      : 'You need to connect',
-      'status_text_connection_gteinfo': 'Connection to GateInfo',
+      'status_text_connection_gteinfo': 'Connecting to GateInfo',
       'status_text_connected_gteinfo' : 'Connected to GateInfo',
       'status_text_connection_dmoaren': 'Connection to DemoArena',
       'status_text_enter_captcha'     : 'Enter the captcha',

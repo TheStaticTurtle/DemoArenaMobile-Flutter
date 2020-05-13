@@ -208,14 +208,14 @@ class _LoginPage extends State<LoginPage> {
     });
   }
 
-  Future<void> connectToGateInfo(BuildContext ctx, String password) async {
-    final storage = new FlutterSecureStorage();
-    Map<String, String> allValues = await storage.readAll();
-    debugPrint(allValues.toString());
+  Future<void> connectToGateInfo(BuildContext ctx, String username, String password) async {
+    //final storage = new FlutterSecureStorage();
+    //Map<String, String> allValues = await storage.readAll();
+    //debugPrint(allValues.toString());
     //SharedPreferences pref = await SharedPreferences.getInstance();
     updateStatus(LoginScreenState.Login_in);
 
-    demoarena.updateCredentials(allValues["username"],(password != null ? password : allValues["password"]));
+    demoarena.updateCredentials(username,password);
     Response gateinfoConnectionCallback = await demoarena.connectToGateInfo();
     if(gateinfoConnectionCallback.return_state == ReturnState.Success) {
       updateStatus(LoginScreenState.Logged_in);
@@ -239,12 +239,12 @@ class _LoginPage extends State<LoginPage> {
       return;
     }
   }
-  Future<void> validateCaptcha(BuildContext ctx) async {
-    final storage = new FlutterSecureStorage();
-    Map<String, String> allValues = await storage.readAll();
+  Future<void> validateCaptcha(BuildContext ctx, String ine, String captcha) async {
+    //final storage = new FlutterSecureStorage();
+    //Map<String, String> allValues = await storage.readAll();
     updateStatus(LoginScreenState.ValidatingCaptcha);
 
-    Response captchaValidationAndCurrentSemesterCallback = await demoarena.validateCaptchaAndGetCurrentSemester(intputController_captcha.text,allValues["ine"]);
+    Response captchaValidationAndCurrentSemesterCallback = await demoarena.validateCaptchaAndGetCurrentSemester(captcha,ine);
     if(captchaValidationAndCurrentSemesterCallback.return_state == ReturnState.Success) {
     } else {
       if( captchaValidationAndCurrentSemesterCallback.return_state == ReturnState.SemesterINEInvalid ||
@@ -257,6 +257,7 @@ class _LoginPage extends State<LoginPage> {
       return;
     }
     updateStatus(LoginScreenState.Login);
+    await saveCredentials();
 
     Navigator.push(
       context,
@@ -265,6 +266,17 @@ class _LoginPage extends State<LoginPage> {
           )
       ),
     );
+  }
+  Future<void> saveCredentials() async {
+    final storage = new FlutterSecureStorage();
+    storage.write(key: "username",  value: intputController_username.text);
+    storage.write(key: "ine",       value: intputController_INE.text);
+    storage.write(key: "save_pass", value: switchController_savePassword.toString());
+    if(switchController_savePassword) {
+      storage.write(key: "password", value: intputController_password.text);
+    } else {
+      storage.write(key: "password", value: "");
+    }
   }
 
   @override
@@ -286,19 +298,23 @@ class _LoginPage extends State<LoginPage> {
         builder: (BuildContext context, AsyncSnapshot<Map<String, String>> snapshot) {
           Widget children;
           if (snapshot.hasData) {
-            String _username = snapshot.data["username"] ?? "";
-            String _password = snapshot.data["password"] ?? "";
-            String _ine = snapshot.data["ine"] ?? "";
 
-            if(snapshot.data["save_pass"] != null) {
-              switchController_savePassword = snapshot.data["save_pass"] == "true";
-            } else {
-              switchController_savePassword = true;
+            //TODO: Load ONLY for first load and not for any state update
+            if(_loginScreenState == LoginScreenState.Login) {
+              String _username = snapshot.data["username"] ?? "";
+              String _password = snapshot.data["password"] ?? "";
+              String _ine = snapshot.data["ine"] ?? "";
+
+              if(snapshot.data["save_pass"] != null) {
+                switchController_savePassword = snapshot.data["save_pass"] == "true";
+              } else {
+                switchController_savePassword = true;
+              }
+
+              intputController_username.text = _username;
+              intputController_password.text = _password;
+              intputController_INE.text = _ine;
             }
-
-            intputController_username.text = _username;
-            intputController_password.text = _password;
-            intputController_INE.text = _ine;
 
             children = Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -419,18 +435,10 @@ class _LoginPage extends State<LoginPage> {
                                   color: Colors.redAccent,
                                   onPressed: () async => {
                                     if (_formKey.currentState.validate()) {
-                                      await storage.write(key: "username",  value: intputController_username.text),
-                                      await storage.write(key: "ine",       value: intputController_INE.text),
-                                      await storage.write(key: "save_pass", value: switchController_savePassword.toString()),
-                                      if(switchController_savePassword) {
-                                        await storage.write(key: "password", value: intputController_password.text),
-                                      } else {
-                                        await storage.write(key: "password", value: ""),
-                                      },
                                       if(!showCaptcha) {
-                                        connectToGateInfo(context,intputController_password.text)
+                                       connectToGateInfo(context,intputController_username.text,intputController_password.text)
                                       } else {
-                                        validateCaptcha(context)
+                                       validateCaptcha(context,intputController_INE.text, intputController_captcha.text)
                                       }
                                     }
                                   },
@@ -450,13 +458,13 @@ class _LoginPage extends State<LoginPage> {
                                         value: switchController_savePassword,
                                         onChanged: (value) async {
                                           await storage.write(key: "save_pass", value: value.toString());
-                                          await storage.write(key: "username",  value: intputController_username.text);
-                                          await storage.write(key: "ine",       value: intputController_INE.text);
-                                          if(switchController_savePassword) {
+                                          //await storage.write(key: "username",  value: intputController_username.text);
+                                          //await storage.write(key: "ine",       value: intputController_INE.text);
+                                          /*if(switchController_savePassword) {
                                             await storage.write(key: "password", value: intputController_password.text);
                                           } else {
                                             await storage.write(key: "password", value: "");
-                                          }
+                                          }*/
                                           setState(() {
                                             switchController_savePassword = value;
                                           });
