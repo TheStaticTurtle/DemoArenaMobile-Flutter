@@ -85,7 +85,10 @@ class LanguageManager {
       'errors_lt_cookie'              : 'Impossible de lire le tag LT ! Deux problèmes possibles : serveur CAS hors-service ou erreur de l\'application (voir .demoarena-log)',
       'errors_unicorn'                : 'Une licorne sauvage a cassé l\'application ! Essaye de la relancer',
 
-      'restart_required'              : 'Un redémarrage de l\'application pourrait être nécessaire'
+      'restart_required'              : 'Un redémarrage de l\'application pourrait être nécessaire',
+
+      'no_internet'                   : 'Veuillez verfier votre connection internet',
+      'update_available'              : 'Hey, il y a une mise a jour disponible sur github (Derniere :latest / Actuelle :current)'
     },
     'EN': {
       'app_name'                      : 'DemoArena',
@@ -135,7 +138,10 @@ class LanguageManager {
       'errors_lt_cookie'              : 'Impossible to read the LT tag ! Two possible issues: CAS Server down or app error (see .demoarena-log)',
       'errors_unicorn'                : 'A wild unicorn broke the app ! Try restarting it',
 
-      'restart_required'              : 'An app restart might be needed'
+      'restart_required'              : 'An app restart might be needed',
+
+      'no_internet'                   : 'Hey, you migth want to check your internet connecitvity',
+      'update_available'              : 'Hey, there is an update available on github (Latest :latest / Current :current)'
     },
   };
 
@@ -291,5 +297,11 @@ class LanguageManager {
     return _localizedValues[locale.languageCode]['restart_required'];
   }
 
+  String get no_internet{
+    return _localizedValues[locale.languageCode]['no_internet'];
+  }
 
+  String get update_available{
+    return _localizedValues[locale.languageCode]['update_available'];
+  }
 }

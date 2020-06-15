@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:demoarenamobile_flutter_port/DemoArenaUtils.dart';
+import 'package:demoarenamobile_flutter_port/GithubUpdateChecker.dart';
 import 'package:demoarenamobile_flutter_port/Utils.dart';
 import 'package:flutter/foundation.dart';
 //import 'package:shared_preferences/shared_preferences.dart';
@@ -17,6 +18,7 @@ void main() => runApp(MyApp());
 var language = new LanguageManager(Locale.FR);
 var ssh = new SSHManager();
 var demoarena = new DemoArenaUtils(ssh);
+var github = new GithubUpdateChecker("TheStaticTurtle/DemoArenaMobile-Flutter","v1.0");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -208,12 +210,64 @@ class _LoginPage extends State<LoginPage> {
     });
   }
 
+  noInternetPopup() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text("The application has enccouterd an error"),
+          content: new Text(language.no_internet),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text(language.tooltips_close),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+  updateAvailablePopup(String latestTag) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text("Information"),
+          content: new Text(language.update_available.replaceAll(":latest", latestTag).replaceAll(":current", github.currentVersionTag)),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text("Download"),
+              onPressed: () => openUrl("https://github.com/"+github.repoUrl+"/releases/latest"),
+            ),
+            new FlatButton(
+              child: new Text(language.tooltips_close),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
   Future<void> connectToGateInfo(BuildContext ctx, String username, String password) async {
-    //final storage = new FlutterSecureStorage();
-    //Map<String, String> allValues = await storage.readAll();
-    //debugPrint(allValues.toString());
-    //SharedPreferences pref = await SharedPreferences.getInstance();
     updateStatus(LoginScreenState.Login_in);
+    bool hasInternet = await github.checkForInternetConnection();
+    if(!hasInternet) {
+      noInternetPopup();
+      updateStatus(LoginScreenState.Login);
+      return;
+    }
+
+    String tag = await github.getLatestReleaseTag();
+    if(tag != github.currentVersionTag && tag != "error" && tag != "notag") {
+      updateAvailablePopup(tag);
+    }
+
 
     demoarena.updateCredentials(username,password);
     Response gateinfoConnectionCallback = await demoarena.connectToGateInfo();
@@ -498,7 +552,7 @@ class _LoginPage extends State<LoginPage> {
                   IconButton(
                     icon: Icon(Icons.error),
                     tooltip: language.tooltips_report,
-                    onPressed: () => openUrl("https://github.com/TheStaticTurtle/DemoArenaMobile-Flutter/issues/new/choose"),
+                    onPressed: () => openUrl("https://github.com/"+github.repoUrl+"/issues/new/choose"),
                   ),
                   PopupMenuButton<Locale>(
                     onSelected: (locale) async => {
