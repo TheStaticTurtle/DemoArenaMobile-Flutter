@@ -264,7 +264,7 @@ class _LoginPage extends State<LoginPage> {
     }
 
     String tag = await github.getLatestReleaseTag();
-    if(tag != github.currentVersionTag && tag != "error" && tag != "notag") {
+    if(tag.toLowerCase() != github.currentVersionTag.toLowerCase() && tag != "error" && tag != "notag") {
       updateAvailablePopup(tag);
     }
 
