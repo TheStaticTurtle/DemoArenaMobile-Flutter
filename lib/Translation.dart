@@ -307,6 +307,6 @@ class LanguageManager {
     return _localizedValues[locale.languageCode]['update_available'];
   }
   String get error{
-    return _localizedValues[locale.languageCode]['update_available'];
+    return _localizedValues[locale.languageCode]['error'];
   }
 }

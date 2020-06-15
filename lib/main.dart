@@ -18,7 +18,7 @@ void main() => runApp(MyApp());
 var language = new LanguageManager(Locale.FR);
 var ssh = new SSHManager();
 var demoarena = new DemoArenaUtils(ssh);
-var github = new GithubUpdateChecker("TheStaticTurtle/DemoArenaMobile-Flutter","V1.1");
+var github = new GithubUpdateChecker("TheStaticTurtle/DemoArenaMobile-Flutter","V1.2");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
