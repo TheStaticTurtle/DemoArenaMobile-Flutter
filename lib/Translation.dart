@@ -87,8 +87,9 @@ class LanguageManager {
 
       'restart_required'              : 'Un redémarrage de l\'application pourrait être nécessaire',
 
-      'no_internet'                   : 'Veuillez verfier votre connection internet',
+      'no_internet'                   : 'Veuillez vérifier votre connexion Internet',
       'update_available'              : 'Une mise à jour est disponible sur Github (Derniere :latest / Actuelle :current)'
+      'error'                         : 'L\'application a rencontré une erreur'
     },
     'EN': {
       'app_name'                      : 'DemoArena',
@@ -140,8 +141,9 @@ class LanguageManager {
 
       'restart_required'              : 'An app restart might be needed',
 
-      'no_internet'                   : 'Hey, you migth want to check your internet connecitvity',
-      'update_available'              : 'Hey, there is an update available on Github (Latest :latest / Current :current)'
+      'no_internet'                   : 'Hey, you might want to check your internet connectivity',
+      'update_available'              : 'Hey, there is an update available on Github (Latest :latest / Current :current)',
+      'error'                         : 'The application has encountered an error'
     },
   };
 
@@ -302,6 +304,9 @@ class LanguageManager {
   }
 
   String get update_available{
+    return _localizedValues[locale.languageCode]['update_available'];
+  }
+  String get error{
     return _localizedValues[locale.languageCode]['update_available'];
   }
 }

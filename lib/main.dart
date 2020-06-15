@@ -79,7 +79,7 @@ class _LoginPage extends State<LoginPage> {
       builder: (BuildContext context) {
         // return object of type Dialog
         return AlertDialog(
-          title: new Text("The application has enccouterd an error"),
+          title: new Text(language.error),
           content: new Text(err.error.toString()),
           actions: <Widget>[
             // usually buttons at the bottom of the dialog
@@ -216,7 +216,7 @@ class _LoginPage extends State<LoginPage> {
       builder: (BuildContext context) {
         // return object of type Dialog
         return AlertDialog(
-          title: new Text("The application has enccouterd an error"),
+          title: new Text(language.error),
           content: new Text(language.no_internet),
           actions: <Widget>[
             new FlatButton(
@@ -605,7 +605,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
       builder: (BuildContext context) {
         // return object of type Dialog
         return AlertDialog(
-          title: new Text("The application has enccouterd an error"),
+          title: new Text(language.error),
           content: new Text(err.error.toString()),
           actions: <Widget>[
             // usually buttons at the bottom of the dialog
