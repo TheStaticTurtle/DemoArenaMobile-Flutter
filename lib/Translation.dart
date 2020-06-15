@@ -57,7 +57,7 @@ class LanguageManager {
       'login_format_ine_len'          : 'Longueur invalide',
       'login_format_ine_nan'          : 'N\'est pas un nombre',
       'login_format_donotmesswithme'  : 'LAISSE-MOI TANQUILLE !',
-      'login_format_captcha'          : 'Longeur invalide',
+      'login_format_captcha'          : 'Longueur invalide',
 
       'status_text_please_login'      : 'Veuillez vous connecter',
       'status_text_connection_gteinfo': 'Connexion à GateInfo',
@@ -88,7 +88,7 @@ class LanguageManager {
       'restart_required'              : 'Un redémarrage de l\'application pourrait être nécessaire',
 
       'no_internet'                   : 'Veuillez vérifier votre connexion Internet',
-      'update_available'              : 'Une mise à jour est disponible sur Github (Derniere :latest / Actuelle :current)'
+      'update_available'              : 'Une mise à jour est disponible sur Github (Derniere :latest / Actuelle :current)',
       'error'                         : 'L\'application a rencontré une erreur'
     },
     'EN': {
@@ -141,7 +141,7 @@ class LanguageManager {
 
       'restart_required'              : 'An app restart might be needed',
 
-      'no_internet'                   : 'Hey, you might want to check your internet connectivity',
+      'no_internet'                   : 'Please check you internet connection',
       'update_available'              : 'Hey, there is an update available on Github (Latest :latest / Current :current)',
       'error'                         : 'The application has encountered an error'
     },
