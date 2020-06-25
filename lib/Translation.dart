@@ -43,6 +43,7 @@ class LanguageManager {
       'tooltips_report'               : 'Signaler un bug',
       'tooltips_language'             : 'Changer la langue',
       'tooltips_close'                : 'Fermer',
+      'tooltips_download'             : 'Télécharger',
 
       'login_please_connect'          : 'Veuillez vous connecter !',
       'login_username'                : 'Entrez votre nom d\'utilisateur :',
@@ -88,8 +89,10 @@ class LanguageManager {
       'restart_required'              : 'Un redémarrage de l\'application pourrait être nécessaire',
 
       'no_internet'                   : 'Veuillez vérifier votre connexion Internet',
-      'update_available'              : 'Une mise à jour est disponible sur Github (Derniere :latest / Actuelle :current)',
-      'error'                         : 'L\'application a rencontré une erreur'
+      'update_available'              : 'Une mise à jour est disponible sur Github (Dernière :latest / Actuelle :current)',
+      'error'                         : 'L\'application a rencontré une erreur',
+
+      'temporary_grade'               : 'Provisoire'
     },
     'EN': {
       'app_name'                      : 'DemoArena',
@@ -97,6 +100,7 @@ class LanguageManager {
       'tooltips_report'               : 'Report a bug',
       'tooltips_language'             : 'Change language',
       'tooltips_close'                : 'Close',
+      'tooltips_download'             : 'Download',
 
       'login_please_connect'          : 'Please log in!',
       'login_username'                : 'Enter your username:',
@@ -143,7 +147,9 @@ class LanguageManager {
 
       'no_internet'                   : 'Please check you internet connection',
       'update_available'              : 'Hey, there is an update available on Github (Latest :latest / Current :current)',
-      'error'                         : 'The application has encountered an error'
+      'error'                         : 'The application has encountered an error',
+
+      'temporary_grade'               : 'Temporary'
     },
   };
 
@@ -308,5 +314,11 @@ class LanguageManager {
   }
   String get error{
     return _localizedValues[locale.languageCode]['error'];
+  }
+  String get tooltips_download{
+    return _localizedValues[locale.languageCode]['tooltips_download'];
+  }
+  String get temporary_grade{
+    return _localizedValues[locale.languageCode]['temporary_grade'];
   }
 }

@@ -18,7 +18,7 @@ void main() => runApp(MyApp());
 var language = new LanguageManager(Locale.FR);
 var ssh = new SSHManager();
 var demoarena = new DemoArenaUtils(ssh);
-var github = new GithubUpdateChecker("TheStaticTurtle/DemoArenaMobile-Flutter","V1.2");
+var github = new GithubUpdateChecker("TheStaticTurtle/DemoArenaMobile-Flutter","V1.3");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -240,7 +240,7 @@ class _LoginPage extends State<LoginPage> {
           content: new Text(language.update_available.replaceAll(":latest", latestTag).replaceAll(":current", github.currentVersionTag)),
           actions: <Widget>[
             new FlatButton(
-              child: new Text("Download"),
+              child: new Text(language.tooltips_download),
               onPressed: () => openUrl("https://github.com/"+github.repoUrl+"/releases/latest"),
             ),
             new FlatButton(

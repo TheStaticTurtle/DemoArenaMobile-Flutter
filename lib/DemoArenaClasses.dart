@@ -101,12 +101,35 @@ class Grade {
             mainAxisAlignment:MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                (this.showId ? this.id+ ": " : "")  + this.name,
-                style: TextStyle(
-                  fontSize: 19
+              !this.semester.done && this.type == "MOYGEN" ?
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      (this.showId ? this.id+ ": " : "")  + this.name,
+                      style: TextStyle(
+                          fontSize: 19
+                      ),
+                    ),
+                    Padding(
+                      child:
+                      Text(
+                        "("+language.temporary_grade+")",
+                        style: TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.bold
+                        ),
+                      ), padding: EdgeInsets.only(left: 10,bottom: 0,top: 0,right: 0),
+                    )
+                  ]
+                )
+              :
+                Text(
+                  (this.showId ? this.id+ ": " : "")  + this.name,
+                  style: TextStyle(
+                      fontSize: 19
+                  ),
                 ),
-              ),
               Table(
                 columnWidths: {0: FractionColumnWidth(.65)},
                 children: [
