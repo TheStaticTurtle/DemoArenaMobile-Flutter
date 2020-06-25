@@ -167,7 +167,7 @@ class Grade {
                                   (
                                       this.grade>=0 && (this.coeff>0 ||this.type == "MOYGEN") ?
                                       "" :
-                                      (this.type == "GRADE" ? "Non noter" : (this.type == "UE" && !this.semester.done? "" : "Aucune note"))
+                                      (this.type == "GRADE" ? "Non noté" : (this.type == "UE" && !this.semester.done? "" : "Aucune note"))
                                   ),
                               style: TextStyle(
                                   fontSize: 16.5,

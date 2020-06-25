@@ -79,7 +79,7 @@ class LanguageManager {
 
       'display_absences_from'         : 'De :',
       'display_absences_to'           : 'À :',
-      'display_absences_reason'       : 'Raison :',
+      'display_absences_reason'       : 'Motif :',
 
       'errors_amigus_not_here'        : 'Cookie AMIGUS non présent ! Utilisateur ou mot de passe incorrect',
       'errors_python_error'           : 'Erreur de l\'application ! La commande a retourné plus que 3 lignes (voir .demoarena.log)',
@@ -120,7 +120,7 @@ class LanguageManager {
       'status_text_please_login'      : 'You need to connect',
       'status_text_connection_gteinfo': 'Connecting to GateInfo',
       'status_text_connected_gteinfo' : 'Connected to GateInfo',
-      'status_text_connection_dmoaren': 'Connection to DemoArena',
+      'status_text_connection_dmoaren': 'Connecting to DemoArena',
       'status_text_enter_captcha'     : 'Enter the captcha',
       'status_text_enter_validcaptcha': 'Captcha validation',
 
@@ -145,7 +145,7 @@ class LanguageManager {
 
       'restart_required'              : 'An app restart might be needed',
 
-      'no_internet'                   : 'Please check you internet connection',
+      'no_internet'                   : 'Please check your internet connection',
       'update_available'              : 'Hey, there is an update available on Github (Latest :latest / Current :current)',
       'error'                         : 'The application has encountered an error',
 
