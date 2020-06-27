@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:demoarenamobile_flutter_port/SSHManager.dart';
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'Utils.dart';
@@ -206,8 +207,48 @@ class DemoArenaUtils {
 
       int i = 0;
       for (Element el in gradesTable.getElementsByTagName("tr")) {
-        if (i > 0 && !user.semesters[0].done ||
-            i > 1 && user.semesters[0].done) {
+        if (i > 0) {
+
+          if(el.innerHtml.contains("Moyenne générale")) {
+            Grade g = new Grade();
+            g.type = "MOYGEN";
+            g.id = "MOYGEN";
+            g.name = "Moyenne generale";
+            g.coeff = -1;
+            g.max_grade = -1;
+            g.min_grade = -1;
+            g.showId = false;
+
+            String gradeText = el.children[1].text;
+            List<String> gradesTexts = gradeText.split("/");
+
+            try {
+              g.grade = double.parse(gradesTexts[0]);
+            } catch (e) {
+              g.grade = -1;
+            }
+            try {
+              g.outof = double.parse(gradesTexts[1]);
+            } catch (e) {
+              g.outof = -1;
+            }
+
+
+            RegExp exp2 = new RegExp(r"(\d+.\d+)/(\d+.\d+)");
+            Iterable<RegExpMatch> matches2 = exp2.allMatches(el.outerHtml);
+            if (matches2.length > 0) {
+              var match = matches2.elementAt(0);
+              g.min_grade = double.parse(match.group(1));
+              g.max_grade = double.parse(match.group(2));
+            }
+
+            log(g.grade.toString());
+            user.semesters[0].moyGen = g;
+
+            i++;
+            continue;
+          }
+
           if (user.semesters[0].done) {
             if (el.attributes["class"] != null && el.attributes["class"].contains("notes_bulletin_row_ue")) {
               currentUE = new UE();
@@ -233,7 +274,8 @@ class DemoArenaUtils {
               }
 
               user.semesters[0].ues.add(currentUE);
-            } else {
+            }
+            else {
               currentCourse = new Course();
               currentCourse.id = el.children[1].text;
               currentCourse.name = el.children[2].text;
@@ -285,7 +327,8 @@ class DemoArenaUtils {
               currentUE.semester = user.semesters[0];
 
               user.semesters[0].ues.add(currentUE);
-            } else if (el.attributes["class"] != null && el.attributes["class"].contains("toggle4")) {
+            }
+            else if (el.attributes["class"] != null && el.attributes["class"].contains("toggle4")) {
               Grade grade = new Grade();
 
               grade.name = el.children[3].text;
@@ -321,7 +364,8 @@ class DemoArenaUtils {
               grade.type = "GRADE";
 
               currentCourse.grades.add(grade);
-            } else {
+            }
+            else {
               currentCourse = new Course();
               currentCourse.semester = user.semesters[0];
               currentCourse.id = el.children[1].text;
@@ -332,7 +376,12 @@ class DemoArenaUtils {
               catch (e) {
                 currentCourse.grade = -1;
               }
-              currentCourse.coeff = double.parse(el.children[6].text);
+              try {
+                currentCourse.coeff = double.parse(el.children[6].text);
+              }
+              catch (e) {
+                currentCourse.coeff = -1;
+              }
 
               RegExp exp = new RegExp(r"(\d+.\d+)/(\d+.\d+)");
               Iterable<RegExpMatch> matches = exp.allMatches(el.outerHtml);
@@ -400,7 +449,7 @@ class DemoArenaUtils {
         }
       }
 
-      double totalNotes = 0.0;
+      /*double totalNotes = 0.0;
       double totalCoeff = 0.0;
       double noteOffset = 0.0;
       for(Grade gr in user.semesters[0].uesMoy) {
@@ -424,7 +473,7 @@ class DemoArenaUtils {
       g.grade = totalCoeff > 0 ? ((totalNotes / totalCoeff)*100.0).round() /100.0 : -1;
       g.grade += noteOffset;
       g.showId = false;
-      user.semesters[0].moyGen = g;
+      user.semesters[0].moyGen = g;*/
     }
 
     return user;
