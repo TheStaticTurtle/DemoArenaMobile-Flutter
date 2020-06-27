@@ -263,7 +263,7 @@ class DemoArenaUtils {
                 currentUE.name = el.text;
               }
               currentUE.grade = double.parse(el.children[2].text);
-              currentUE.coeff = double.parse(el.children[2].text);
+              currentUE.coeff = double.parse(el.children[4].text);
 
               RegExp exp2 = new RegExp(r"(\d+.\d+)/(\d+.\d+)");
               Iterable<RegExpMatch> matches2 = exp2.allMatches(el.outerHtml);
