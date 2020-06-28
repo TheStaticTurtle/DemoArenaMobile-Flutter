@@ -1,7 +1,7 @@
 name: demoarenamobile_flutter_port
 description: Demoarena interface for mobile
 
-version: 1.4.0+3
+version: 1.5.0+4
 
 environment:
   sdk: ">=2.3.0 <3.0.0"

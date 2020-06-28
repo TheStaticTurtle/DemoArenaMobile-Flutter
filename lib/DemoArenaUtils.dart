@@ -161,6 +161,29 @@ class DemoArenaUtils {
 
     User user = new User();
 
+
+    Element semesterSelector = document.querySelector(
+        "body > form > fieldset > p > select");
+
+    if(document.outerHtml.contains("pas de semestre en cours")) {
+      Semester sem = new Semester("NOSEM" ,"Aucun semestre en cour");
+      user.semesters.add(sem);
+      user.name = "";
+      user.formation = "";
+    }
+
+    for (Element el in semesterSelector.children) {
+      Semester sem = new Semester(el.attributes["value"] ,el.text);
+      //sem.id = el.attributes["value"];
+      //sem.name = el.text;
+      user.semesters.add(sem);
+    }
+
+    if(document.outerHtml.contains("pas de semestre en cours")) {
+      return user;
+    }
+
+
     Element nameFormationSelector = document.querySelector(
         "body > div.bulletin > table > tbody > tr");
     user.name =
@@ -170,15 +193,6 @@ class DemoArenaUtils {
         nameFormationSelector.children[1].children[0].children[0].children[1]
             .text;
 
-    Element semesterSelector = document.querySelector(
-        "body > form > fieldset > p > select");
-
-    for (Element el in semesterSelector.children) {
-      Semester sem = new Semester(el.attributes["value"] ,el.text);
-      //sem.id = el.attributes["value"];
-      //sem.name = el.text;
-      user.semesters.add(sem);
-    }
 
     Element absanceTable = document.querySelector("#absences");
     if (absanceTable != null) {
@@ -201,6 +215,7 @@ class DemoArenaUtils {
 
     Element gradesTable = document.querySelector(".notes_bulletin");
     if (gradesTable != null) {
+      bool foundAverage = false;
       bool foundFirstUE = false;
       UE currentUE = new UE();
       Course currentCourse = new Course();
@@ -210,6 +225,7 @@ class DemoArenaUtils {
         if (i > 0) {
 
           if(el.innerHtml.contains("Moyenne générale")) {
+            foundAverage = true;
             Grade g = new Grade();
             g.type = "MOYGEN";
             g.id = "MOYGEN";
@@ -276,11 +292,21 @@ class DemoArenaUtils {
               user.semesters[0].ues.add(currentUE);
             }
             else {
+              log(el.innerHtml);
               currentCourse = new Course();
               currentCourse.id = el.children[1].text;
               currentCourse.name = el.children[2].text;
-              currentCourse.grade = double.parse(el.children[4].text);
-              currentCourse.coeff = double.parse(el.children[6].text);
+
+              try {
+                currentCourse.grade = double.parse(el.children[4].text);
+              } catch (e) {
+                currentCourse.grade = -1;
+              }
+              try {
+                currentCourse.coeff = double.parse(el.children[6].text);
+              } catch (e) {
+                currentCourse.coeff = -1;
+              }
 
               RegExp exp = new RegExp(r"(\\d+.\\d+)/(\\d+.\\d+)");
               Iterable<RegExpMatch> matches = exp.allMatches(el.outerHtml);
@@ -307,18 +333,17 @@ class DemoArenaUtils {
                 currentUE.name = el.text;
               }
 
-              String gradeText = el.children[2].text;
-              String coeffText = el.children[4].text;
-              if (gradeText.isEmpty) {
-                  currentUE.grade = -1;
-              } else {
-                currentUE.grade = double.parse(gradeText);
+              try {
+                currentUE.grade = double.parse(el.children[2].text);
+              } catch (e) {
+                currentUE.grade = -1;
               }
-              if (coeffText.isEmpty) {
+              try {
+                currentUE.coeff = double.parse(el.children[4].text);
+              } catch (e) {
                 currentUE.coeff = -1;
-              } else {
-                currentUE.coeff = double.parse(coeffText);
               }
+
               cupertino.debugPrint(currentUE.grade.toString());
 
               currentUE.min_grade = -1;
@@ -449,31 +474,33 @@ class DemoArenaUtils {
         }
       }
 
-      /*double totalNotes = 0.0;
-      double totalCoeff = 0.0;
-      double noteOffset = 0.0;
-      for(Grade gr in user.semesters[0].uesMoy) {
-        if(gr.grade != -1) {
-          if(gr.type == "MOY") {
-            totalNotes += gr.grade * gr.coeff;
-            totalCoeff += gr.coeff;
-          }
-          if(gr.type == "BONUS") {
-            noteOffset += gr.grade;
+      if(!foundAverage) {
+        double totalNotes = 0.0;
+        double totalCoeff = 0.0;
+        double noteOffset = 0.0;
+        for(Grade gr in user.semesters[0].uesMoy) {
+          if(gr.grade != -1) {
+            if(gr.type == "MOY") {
+              totalNotes += gr.grade * gr.coeff;
+              totalCoeff += gr.coeff;
+            }
+            if(gr.type == "BONUS") {
+              noteOffset += gr.grade;
+            }
           }
         }
+        Grade g = new Grade();
+        g.type = "MOYGEN";
+        g.id = "MOYGEN";
+        g.name = "Moyenne generale";
+        g.coeff = -1;
+        g.max_grade = -1;
+        g.min_grade = -1;
+        g.grade = totalCoeff > 0 ? ((totalNotes / totalCoeff)*100.0).round() /100.0 : -1;
+        g.grade += noteOffset;
+        g.showId = false;
+        user.semesters[0].moyGen = g;
       }
-      Grade g = new Grade();
-      g.type = "MOYGEN";
-      g.id = "MOYGEN";
-      g.name = "Moyenne generale";
-      g.coeff = -1;
-      g.max_grade = -1;
-      g.min_grade = -1;
-      g.grade = totalCoeff > 0 ? ((totalNotes / totalCoeff)*100.0).round() /100.0 : -1;
-      g.grade += noteOffset;
-      g.showId = false;
-      user.semesters[0].moyGen = g;*/
     }
 
     return user;
