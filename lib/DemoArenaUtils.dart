@@ -12,17 +12,20 @@ class DemoArenaUtils {
   static const String _DEMOARENA_DemoarenaSelect_COMMAND = "python -c 'import requests,base64,pickle,urllib3;urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning);f = open(\".demoarena-cookies\", \"rb\");session = requests.Session();session.cookies.update(pickle.load(f));f.close();print(base64.b64encode(session.post(\"https://demoarena.iut-bm.univ-fcomte.fr/traitement.php\", data={\"nip_VAL\":base64.b64decode(\"##INSERT-INE-HERE##\"), \"capt_Code\":base64.b64decode(\"##INSERT-CAPTCHA-HERE##\")}, verify=False, allow_redirects=True).text.encode(\"UTF-8\")))' 2>> .demoarena-logs";
   static const String _DEMOARENA_DemoarenaCustomSelect_COMMAND = "python -c 'import requests,base64,pickle,urllib3;urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning);f = open(\".demoarena-cookies\", \"rb\");session = requests.Session();session.cookies.update(pickle.load(f));f.close();print(base64.b64encode(session.post(\"https://demoarena.iut-bm.univ-fcomte.fr/traitement.php\", data={\"semestre\":base64.b64decode(\"##INSERT-ID-HERE##\")}, verify=False, allow_redirects=True).text.encode(\"UTF-8\")))' 2>> .demoarena-logs";
 
+  bool _enable_debug = false;
+
   SSHManager _sshManager;
   String _user_username;
   String _user_password;
 
   String last_html;
 
-  DemoArenaUtils(SSHManager man) {
+  DemoArenaUtils(SSHManager man, bool enable_debug) {
     this._sshManager = man;
     this._user_username = "unknown";
     this._user_password = "unknown";
     this._sshManager.init("unknown", "unknown");
+    this._enable_debug = enable_debug;
   }
 
   void updateCredentials(String username, String password) {
@@ -51,6 +54,9 @@ class DemoArenaUtils {
           base64Encode(utf8.encode(this._user_password)));
       command = command.replaceAll("\n", "").replaceAll("\r", "");
       String authResult = await this._sshManager.execute(command);
+      if(this._enable_debug) {
+        log("[DAU] authResut = "+authResult);
+      }
       if (authResult.contains("OK")) {
         List<String> rawData = authResult.split("\n");
         if (rawData.length == 3) {
@@ -91,6 +97,9 @@ class DemoArenaUtils {
           "##INSERT-INE-HERE##", base64Encode(utf8.encode(ine)));
       command = command.replaceAll("\n", "").replaceAll("\r", "");
       String result = await this._sshManager.execute(command);
+      if(this._enable_debug) {
+        log("[DAU] validateCaptchaAndGetCurrentSemester = "+result);
+      }
       result = utf8.decode(
           base64Decode(result.replaceAll("\n", "").replaceAll("\r", "")));
 
@@ -129,6 +138,9 @@ class DemoArenaUtils {
       String result = await this._sshManager.execute(command);
       result = utf8.decode( base64Decode(result.replaceAll("\n", "").replaceAll("\r", "")));
 
+      if(this._enable_debug) {
+        log("[DAU] getSemester = "+result);
+      }
       if (result.contains("La valeur du captcha")) {
         return new Response(
             "Captcha invalide", null, ReturnState.SemesterCaptchaInvalid,
@@ -192,7 +204,10 @@ class DemoArenaUtils {
     user.formation =
         nameFormationSelector.children[1].children[0].children[0].children[1]
             .text;
-
+    user.group =
+        nameFormationSelector.children[1].children[0].children[0].children[3]
+            .text;
+    user.group = user.group.split(" ").length > 1 ? user.group.split(" ")[1] : user.group;
 
     Element absanceTable = document.querySelector("#absences");
     if (absanceTable != null) {

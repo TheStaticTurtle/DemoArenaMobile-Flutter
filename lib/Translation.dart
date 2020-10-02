@@ -73,6 +73,7 @@ class LanguageManager {
 
       'display_grades'                : 'Notes',
       'display_absences'              : 'Absences',
+      'display_group'                 : 'Groupe: ',
 
       'display_loading'               : 'Chargement...',
       'display_empty'                 : 'Ouah, c\'est tellement vide !',
@@ -130,6 +131,7 @@ class LanguageManager {
 
       'display_grades'                : 'Grades',
       'display_absences'              : 'Absences',
+      'display_group'                 : 'Group: ',
 
       'display_loading'               : 'Loading...',
       'display_empty'                 : 'Wow, so empty!',
@@ -283,6 +285,10 @@ class LanguageManager {
 
   String get display_absences_reason{
     return _localizedValues[locale.languageCode]['display_absences_reason'];
+  }
+
+  String get display_group{
+    return _localizedValues[locale.languageCode]['display_group'];
   }
 
   String get errors_amigus_not_here{

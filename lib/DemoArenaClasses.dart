@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 class User {
   String name;
   String formation;
+  String group;
   List<Semester> semesters = new List<Semester>();
 }
 

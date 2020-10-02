@@ -17,8 +17,8 @@ void main() => runApp(MyApp());
 
 var language = new LanguageManager(Locale.FR);
 var ssh = new SSHManager();
-var demoarena = new DemoArenaUtils(ssh);
-var github = new GithubUpdateChecker("TheStaticTurtle/DemoArenaMobile-Flutter","V1.4");
+var demoarena = new DemoArenaUtils(ssh,true);
+var github = new GithubUpdateChecker("TheStaticTurtle/DemoArenaMobile-Flutter","V1.6");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -791,13 +791,27 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                 Padding(
                   padding: EdgeInsets.only(top: 5,bottom: 0,left: 10.0,right: 5.0),
                   child:
-                  Text(
-                    currentUser.name,
-                    style: TextStyle(
-                        fontSize: 30,
-                        color: Colors.black87
-                    ),
-                  ),
+                      Row(
+                      children: [
+                        Text(
+                          currentUser.name,
+                          style: TextStyle(
+                              fontSize: 30,
+                              color: Colors.black87
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(top: 0,bottom: 0,left: 8.0,right: 0.0),
+                          child: Text(
+                            language.display_group+currentUser.group,
+                            style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.black54
+                            ),
+                          ),
+                        )
+                    ],
+                  )
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 5,bottom: 0,left: 10.0,right: 10.0),
