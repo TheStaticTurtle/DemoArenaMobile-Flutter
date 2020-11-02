@@ -204,10 +204,10 @@ class DemoArenaUtils {
     user.formation =
         nameFormationSelector.children[1].children[0].children[0].children[1]
             .text;
-    user.group =
-        nameFormationSelector.children[1].children[0].children[0].children[3]
-            .text;
-    user.group = user.group.split(" ").length > 1 ? user.group.split(" ")[1] : user.group;
+    //user.group =
+    //    nameFormationSelector.children[1].children[0].children[0].children[3]
+    //        .text;
+    //user.group = user.group.split(" ").length > 1 ? user.group.split(" ")[1] : user.group;
 
     Element absanceTable = document.querySelector("#absences");
     if (absanceTable != null) {

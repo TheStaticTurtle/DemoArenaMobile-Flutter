@@ -17,8 +17,8 @@ void main() => runApp(MyApp());
 
 var language = new LanguageManager(Locale.FR);
 var ssh = new SSHManager();
-var demoarena = new DemoArenaUtils(ssh,true);
-var github = new GithubUpdateChecker("TheStaticTurtle/DemoArenaMobile-Flutter","V1.6");
+var demoarena = new DemoArenaUtils(ssh,false);
+var github = new GithubUpdateChecker("TheStaticTurtle/DemoArenaMobile-Flutter","V1.7");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -800,7 +800,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                               color: Colors.black87
                           ),
                         ),
-                        Padding(
+                        /*Padding(
                           padding: EdgeInsets.only(top: 0,bottom: 0,left: 8.0,right: 0.0),
                           child: Text(
                             language.display_group+currentUser.group,
@@ -809,7 +809,7 @@ class _DiplayPage extends State<DisplayPage> with TickerProviderStateMixin{
                                 color: Colors.black54
                             ),
                           ),
-                        )
+                        )*/
                     ],
                   )
                 ),
