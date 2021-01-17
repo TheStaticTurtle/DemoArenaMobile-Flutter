@@ -4,7 +4,7 @@ This a application for studuents of the IUT of Belfort Monbeliard to see their g
 It has been rewritted from https://github.com/TurtleForGaming/DemoArenaMobile to make it compatible with ios
 
 ### Download
-You can download the latest release file [here](https://github.com/TurtleForGaming/DemoArenaMobile/releases)
+You can download the latest release file [here](https://github.com/TheStaticTurtle/DemoArenaMobile-Flutter/releases)
 
 ### Screenshot
 ![First login](https://i.imgur.com/WJ6Mdig.jpg)  ![Captcha](https://i.imgur.com/Ap2YHGC.jpg)  
