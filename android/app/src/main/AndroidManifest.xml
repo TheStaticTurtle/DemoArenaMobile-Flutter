@@ -10,7 +10,9 @@
     <application
         android:name="io.flutter.app.FlutterApplication"
         android:label="DemoArena"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
 
         <activity
             android:name=".MainActivity"
