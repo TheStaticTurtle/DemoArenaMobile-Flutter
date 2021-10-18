@@ -54,6 +54,8 @@ class DemoArenaUtils {
           base64Encode(utf8.encode(this._user_password)));
       command = command.replaceAll("\n", "").replaceAll("\r", "");
       String authResult = await this._sshManager.execute(command);
+      authResult = authResult.replaceAll("\'","\"").replaceAll("b\"","\"");
+
       if(this._enable_debug) {
         log("[DAU] authResut = "+authResult);
       }
@@ -97,6 +99,8 @@ class DemoArenaUtils {
           "##INSERT-INE-HERE##", base64Encode(utf8.encode(ine)));
       command = command.replaceAll("\n", "").replaceAll("\r", "");
       String result = await this._sshManager.execute(command);
+      result = result.replaceAll("b'","").replaceAll("'",""); //Distinction from the first on here I delete the quote
+
       if(this._enable_debug) {
         log("[DAU] validateCaptchaAndGetCurrentSemester = "+result);
       }
@@ -136,11 +140,13 @@ class DemoArenaUtils {
       command = command.replaceAll( "##INSERT-ID-HERE##", base64Encode(utf8.encode(semID)));
       command = command.replaceAll("\n", "").replaceAll("\r", "");
       String result = await this._sshManager.execute(command);
-      result = utf8.decode( base64Decode(result.replaceAll("\n", "").replaceAll("\r", "")));
+      result = result.replaceAll("b'","").replaceAll("'",""); //Distinction from the first on here I delete the quote
 
       if(this._enable_debug) {
-        log("[DAU] getSemester = "+result);
+        log("[DAU] validateCaptchaAndGetCurrentSemester = "+result);
       }
+      result = utf8.decode(base64Decode(result.replaceAll("\n", "").replaceAll("\r", "")));
+
       if (result.contains("La valeur du captcha")) {
         return new Response(
             "Captcha invalide", null, ReturnState.SemesterCaptchaInvalid,

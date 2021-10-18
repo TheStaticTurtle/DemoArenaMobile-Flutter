@@ -26,8 +26,8 @@ class GithubUpdateChecker {
   Future<String> getLatestReleaseTag() async {
     try {
       String api = "https://api.github.com/repos/" + this.repoUrl +
-          "/releases/latest";
-      http.Response r = await http.get(api);
+            "/releases/latest";
+      http.Response r = await http.get(Uri.parse(api));
 
       if (r.statusCode == 200) {
         Map<String, dynamic> data = json.decode(r.body);
